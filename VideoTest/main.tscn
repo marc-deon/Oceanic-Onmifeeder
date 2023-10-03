@@ -1,0 +1,138 @@
+[gd_scene load_steps=4 format=3 uid="uid://dpmw1n0onhdkf"]
+
+[ext_resource type="Script" path="res://VideoTest.gd" id="1_2mrgw"]
+[ext_resource type="Texture2D" uid="uid://c8nh38nw53ual" path="res://demo.png" id="1_j84c0"]
+[ext_resource type="Script" path="res://main.gd" id="1_wfqsr"]
+
+[node name="ControlRoot" type="PanelContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = ExtResource("1_wfqsr")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="SidePanel" type="PanelContainer" parent="HBoxContainer"]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer/SidePanel"]
+layout_mode = 2
+
+[node name="Hamburger" type="Button" parent="HBoxContainer/SidePanel/VBoxContainer"]
+layout_mode = 2
+toggle_mode = true
+text = "三"
+
+[node name="Home" type="Button" parent="HBoxContainer/SidePanel/VBoxContainer"]
+layout_mode = 2
+text = "Home"
+
+[node name="Settings" type="Button" parent="HBoxContainer/SidePanel/VBoxContainer"]
+layout_mode = 2
+text = "Settings"
+
+[node name="Empty" type="Control" parent="HBoxContainer/SidePanel/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="HomePanel" type="PanelContainer" parent="HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer/HomePanel"]
+layout_mode = 2
+
+[node name="IP" type="HBoxContainer" parent="HBoxContainer/HomePanel/VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="HBoxContainer/HomePanel/VBoxContainer/IP"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Connecting to"
+horizontal_alignment = 2
+
+[node name="Value" type="Label" parent="HBoxContainer/HomePanel/VBoxContainer/IP"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "00°"
+
+[node name="Camera" type="TextureRect" parent="HBoxContainer/HomePanel/VBoxContainer"]
+custom_minimum_size = Vector2(10, 10)
+layout_mode = 2
+texture = ExtResource("1_j84c0")
+expand_mode = 5
+stretch_mode = 5
+script = ExtResource("1_2mrgw")
+
+[node name="Temperature" type="HBoxContainer" parent="HBoxContainer/HomePanel/VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="HBoxContainer/HomePanel/VBoxContainer/Temperature"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Temperature"
+horizontal_alignment = 2
+
+[node name="Value" type="Label" parent="HBoxContainer/HomePanel/VBoxContainer/Temperature"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "00°"
+
+[node name="Ph" type="HBoxContainer" parent="HBoxContainer/HomePanel/VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="HBoxContainer/HomePanel/VBoxContainer/Ph"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "pH"
+horizontal_alignment = 2
+
+[node name="Value" type="Label" parent="HBoxContainer/HomePanel/VBoxContainer/Ph"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "14"
+
+[node name="SettingsPanel" type="PanelContainer" parent="HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer/SettingsPanel"]
+layout_mode = 2
+alignment = 1
+
+[node name="Setting1" type="HBoxContainer" parent="HBoxContainer/SettingsPanel/VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="HBoxContainer/SettingsPanel/VBoxContainer/Setting1"]
+layout_mode = 2
+text = "Username (NYI)"
+
+[node name="LineEdit" type="LineEdit" parent="HBoxContainer/SettingsPanel/VBoxContainer/Setting1"]
+layout_mode = 2
+placeholder_text = "asdasd"
+
+[node name="Setting2" type="HBoxContainer" parent="HBoxContainer/SettingsPanel/VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="HBoxContainer/SettingsPanel/VBoxContainer/Setting2"]
+layout_mode = 2
+text = "Password (NYI)"
+
+[node name="LineEdit" type="LineEdit" parent="HBoxContainer/SettingsPanel/VBoxContainer/Setting2"]
+layout_mode = 2
+placeholder_text = "asdasd"
+secret = true
+
+[connection signal="toggled" from="HBoxContainer/SidePanel/VBoxContainer/Hamburger" to="." method="_on_hamburger_toggled"]
+[connection signal="pressed" from="HBoxContainer/SidePanel/VBoxContainer/Home" to="." method="_on_home_pressed"]
+[connection signal="pressed" from="HBoxContainer/SidePanel/VBoxContainer/Settings" to="." method="_on_settings_pressed"]
