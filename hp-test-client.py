@@ -1,3 +1,4 @@
+#! /usr/bin/env python3
 import socket
 from sys import argv
 import curses
@@ -165,6 +166,7 @@ if argv[1] == "host":
     match msg:
         case ["HOSTING", trm, port]:
             print("Hosting at...", trm, sock.getsockname()[1])
+            sock.close()
             sock = CreateSocket(port=int(port))
             while True:
                 try:
