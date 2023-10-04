@@ -1,9 +1,10 @@
 #! /usr/bin/env python3
 
+from sys import argv
 import socket
 
 BUFF_SIZE = 65536
-HOST_IP = '4800.highlyderivative.games'
+HOST_IP = 'highlyderivative.games'
 HOST_PORT = 4800
 socket_address = (HOST_IP, HOST_PORT)
 
@@ -23,7 +24,37 @@ def utf8send(sock, msg, ip, port=None):
     ip   ({type(ip)}) {ip},
     port ({type(port)}) {port}
     """)
-    sock.sendto(msg.encode("utf8"), (ip, port))
+    sock.sendto(msg.encode("utf8"), (ip, int(port)))
+
+
+
+def UPNP():
+    userdict = {}
+    s = CreateSocket()
+    s.bind(socket_address)
+    while True:
+        msg, (addr, port) = s.recvfrom(BUFF_SIZE)
+        msg = msg.decode('utf8').split(" ")
+        match msg:
+            case ["HOST", username]:
+                userdict[username] = addr, port
+                utf8send(s, f"HOSTING", addr, port)
+            case ["CONN", username]:
+                if username in userdict:
+                    hostaddr, hostport = userdict[username]
+                    utf8send(s, f"EXPECT {addr} {port}", hostaddr, hostport)
+                    utf8send(s, f"CONNTO {hostaddr} {hostport}", addr, port)
+                else:
+                    utf8send(s, f"USERNAME_NOT_PRESENT", addr, port)
+            case _:
+                pass
+    pass
+
+
+if "upnp" in argv:
+    UPNP()
+    exit(0)
+
 
 
 # List of valid messages
