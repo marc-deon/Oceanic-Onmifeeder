@@ -1,3 +1,4 @@
+#! /usr/bin/env python3
 import socket
 from sys import argv
 import curses
@@ -7,10 +8,10 @@ import threading
 
 BUFF_SIZE = 65536
 def CreateSocket(timeout=0, port=0):
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, BUFF_SIZE)
     if port:
-        s.bind(('0.0.0.0', port))
+        s.bind(('', int(port)))
     if timeout:
         s.settimeout(timeout)
     return s
@@ -23,6 +24,7 @@ def GetLocalIp():
 def utf8send(sock, msg, ip, port=None):
     if port == None:
         ip, port = ip
+    print(f"sending to {ip}:{port} {msg}")
     sock.sendto(msg.encode("utf8"), (ip, int(port)))
 
 server_addr = ("highlyderivative.games", 4800)
@@ -141,7 +143,10 @@ def connect_to_peer(recv_sock, public, local, port):
 
         except socket.timeout:
             attempts -= 1
+            print("timeout")
             continue
+        except KeyboardInterrupt:
+            exit(0)
 
 
     if not actual:
@@ -165,6 +170,7 @@ if argv[1] == "host":
     match msg:
         case ["HOSTING", trm, port]:
             print("Hosting at...", trm, sock.getsockname()[1])
+            sock.close()
             sock = CreateSocket(port=int(port))
             while True:
                 try:
