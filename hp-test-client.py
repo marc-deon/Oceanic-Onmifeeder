@@ -44,7 +44,7 @@ def PeerHandshake(sock:socket.socket, ourPublic:str, peerPublic:str, peerLocal:s
                     break
 
                 # Peer has made contact with us
-                case ["IAM", ip, p]:
+                case ["IAM", ip, _p]:
                     if ip == peerPublic:
                         actual = peerPublic
                     elif ip == peerLocal:
