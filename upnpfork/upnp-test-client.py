@@ -129,24 +129,29 @@ USER = 'poseidon'
 #
 from sys import argv
 
-def iam(s, hostaddr, hostport):
+def iam(s, addr, initport):
+    port = initport
     attempts = 0
     s.settimeout(10)
 
     while attempts < 5:
         attempts += 1
         try:
-            utf8send(s, f"IAM", hostaddr, hostport)
-            msg, addr, port = utf8get(s, False)
+            utf8send(s, f"IAM", addr, port)
+            msg, _, p = utf8get(s, False)
+
             if msg == "YOUARE":
-                print("Recieved YOUARE")
-                print(":)")
+                #print("Recieved YOUARE")
+                #print(":)")
                 curses.wrapper(chatroom, s, s, addr, port)
                 exit(0)
 
             if msg == "IAM":
-                print("recieved IAM, sending YOUARE")
-                utf8send(s, "YOUARE", hostaddr, hostport)
+                #print("recieved IAM, sending YOUARE")
+                if port != p:
+                    print("Updating port")
+                    port = p
+                utf8send(s, "YOUARE", addr, port)
 
         except socket.timeout:
             print("Timeout", attempts)
