@@ -37,11 +37,49 @@ def utf8send(sock, msg, ip, port=None):
     sock.sendto(msg, (ip, int(port)))
 
 
-def utf8get(sock, split=False):
+def utf8get(sock, split=False) -> (str, str, int):
     msg, (addr, port) = sock.recvfrom(BUFF_SIZE)
     msg = msg.decode("utf8")
     if split:
         msg = msg.split(" ")
-    return msg, addr, port
+    return msg, addr, int(port)
 
 
+####
+##
+####
+import dataclass
+
+@dataclass
+class RudpSegment:
+    pass
+
+
+class RUDP:
+    """Reliable UDP port"""
+
+    def __init__(self, timeout:int=0, port:int=0):
+        self.socket = CreateSocket(timeout=timeout, port=port)
+
+    def utf8send(msg, ip:str, port:int) -> None:
+        utf8send(self.socket, msg, ip, port)
+
+    def utf8get(split:bool=False) -> (str, str, int):
+        return utf8get(self.socket, split)
+
+    def _sendto(msg, ip:str, port:int=None) -> None:
+        if port:
+            ip  ip, port
+        self.socket.sendto(msg, (ip,port))
+
+    def _recvfrom(BUFF_SIZE) -> (str, int):
+        return self.socket.recvfrom(BUFF_SIZE)
+
+    def connect(self, ip:str, initialPort:int):
+        pass
+
+if __name__ == "__main__":
+    from sys import argv
+    if "rudp" in argv:
+        sock = RUDP()
+        
