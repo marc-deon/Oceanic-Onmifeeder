@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 
 import socket
-import miniupnpc
+#import miniupnpc
 
 import curses
 import threading
@@ -113,20 +113,20 @@ SERVER_PORT = 4800
 USER = 'poseidon'
 
 
-import random
-PORT = random.randint(4801, 65535)
+#import random
+#PORT = random.randint(4801, 65535)
 
-upnp = miniupnpc.UPnP()
-upnp.discoverdelay = 10
-upnp.discover()
-upnp.selectigd()
+#upnp = miniupnpc.UPnP()
+#upnp.discoverdelay = 10
+#upnp.discover()
+#upnp.selectigd()
 #                                 External    Protocol    Internal-host   Internal    Description   Remote-host
-openrequest = upnp.addportmapping(PORT,       'UDP',      upnp.lanaddr,   PORT,       'testing',    '')
+#openrequest = upnp.addportmapping(PORT,       'UDP',      upnp.lanaddr,   PORT,       'testing',    '')
 
-if not openrequest:
-    print("Router would not open port")
-    exit(1)
-
+#if not openrequest:
+#    print("Router would not open port")
+#    exit(1)
+#
 from sys import argv
 
 def iam(s, hostaddr, hostport):
@@ -141,7 +141,7 @@ def iam(s, hostaddr, hostport):
             if msg == "YOUARE":
                 print("Recieved YOUARE")
                 print(":)")
-                curses.wrapper(chatroom, s, s, hostaddr, hostport)
+                curses.wrapper(chatroom, s, s, addr, port)
                 exit(0)
 
             if msg == "IAM":
@@ -154,7 +154,7 @@ def iam(s, hostaddr, hostport):
 
 if "host" in argv:
     s = CreateSocket()
-    s.bind(('', PORT))
+    #s.bind(('', PORT))
     utf8send(s, f"HOST {USER}", SERVER_IP, SERVER_PORT)
     msg, addr, port = utf8get(s, False)
     if msg == "HOSTING":
@@ -171,7 +171,7 @@ if "host" in argv:
 
 elif "connect" in argv:
     s = CreateSocket()
-    s.bind(('', PORT))
+    #s.bind(('', PORT))
     utf8send(s, f"CONN {USER}", SERVER_IP, SERVER_PORT)
     msg, addr, port = utf8get(s)
     match msg:
