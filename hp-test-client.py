@@ -39,6 +39,7 @@ def PeerHandshake(sock:socket.socket, ourPublic:str, peerPublic:str, peerLocal:s
                 # Peer heard our IAM and is responding!
                 case ["YOUARE"]:
                     # Send one final YOUARE back to them
+                    port = p
                     utf8send(sock, "YOUARE", actual, port)
                     break
 
