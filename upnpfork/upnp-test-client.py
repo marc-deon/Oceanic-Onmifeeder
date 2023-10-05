@@ -141,13 +141,13 @@ def iam(s, addr, initport):
             msg, _, p = utf8get(s, False)
 
             if msg == "YOUARE":
-                #print("Recieved YOUARE")
-                #print(":)")
-                curses.wrapper(chatroom, s, s, addr, port)
+                print("Recieved YOUARE")
+                print(":)")
+                #curses.wrapper(chatroom, s, s, addr, port)
                 exit(0)
 
             if msg == "IAM":
-                #print("recieved IAM, sending YOUARE")
+                print("recieved IAM, sending YOUARE")
                 if port != p:
                     print("Updating port")
                     port = p
