@@ -33,7 +33,7 @@ def PeerHandshake(sock:socket.socket, ourPublic:str, peerPublic:str, peerLocal:s
             utf8send(sock, f"IAM {ourLocal} {GetSocketPort(sock)}", peerLocal, port)
 
             # Listen for message from peer
-            msg, _, p = utf8get(sock, True)
+            msg, ip, p = utf8get(sock, True)
 
             match msg:
                 # Peer heard our IAM and is responding!
@@ -44,7 +44,7 @@ def PeerHandshake(sock:socket.socket, ourPublic:str, peerPublic:str, peerLocal:s
                     break
 
                 # Peer has made contact with us
-                case ["IAM", ip, _p]:
+                case ["IAM", _ip, _p]:
                     if ip == peerPublic:
                         actual = peerPublic
                     elif ip == peerLocal:
