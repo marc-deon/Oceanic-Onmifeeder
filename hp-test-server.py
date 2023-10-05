@@ -27,23 +27,28 @@ def utf8send(sock, msg, ip, port=None):
     sock.sendto(msg.encode("utf8"), (ip, int(port)))
 
 
-
-def UPNP():
+def main():
     userdict = {}
     s = CreateSocket()
     s.bind(socket_address)
+    print("Listening at", socket_address)
     while True:
         msg, (addr, port) = s.recvfrom(BUFF_SIZE)
         msg = msg.decode('utf8').split(" ")
         match msg:
-            case ["HOST", username]:
-                userdict[username] = addr, port
+            case ["HOST", local, username]:
+                userdict[username] = local, addr, port
                 utf8send(s, f"HOSTING", addr, port)
-            case ["CONN", username]:
+
+            case ["FRSH"]:
+                utf8send(s, "OK", addr, port)
+
+            case ["CONN", local, username]:
                 if username in userdict:
-                    hostaddr, hostport = userdict[username]
-                    utf8send(s, f"EXPECT {addr} {port}", hostaddr, hostport)
-                    utf8send(s, f"CONNTO {hostaddr} {hostport}", addr, port)
+                    hostlocal, hostaddr, hostport = userdict[username]
+                    utf8send(s, f"EXPECT {hostaddr} {addr} {local} {port}", hostaddr, hostport)
+                    utf8send(s, f"CONNTO {addr} {hostlocal} {hostaddr} {hostport}", addr, port)
+                    userdict.pop(username)
                 else:
                     utf8send(s, f"USERNAME_NOT_PRESENT", addr, port)
             case _:
@@ -51,43 +56,4 @@ def UPNP():
     pass
 
 
-if "upnp" in argv:
-    UPNP()
-    exit(0)
-
-
-
-# List of valid messages
-#
-# HOST local-ip > HOSTING trmXXXX
-# CONN local-ip trmXXXX > OK pub-ip local-ip port
-# FRSH > OK
-
-userdict = {}
-
-while True:
-    sock = CreateSocket()
-    sock.bind(socket_address)
-    print('Listening at:', socket_address)
-
-    msg, addr = sock.recvfrom(BUFF_SIZE)
-    port = addr[1]
-    msg = msg.decode("utf8").split(" ")
-    match msg:
-        case ["HOST", localIp]:
-            trm = "trm1234"
-            userdict[trm] = addr[0], localIp, port
-            utf8send(sock, f"HOSTING {trm} {port}" , addr)
-
-        case ["CONN", clientLocal, trm]:
-            hostPublic, hostLocal, hostPort = userdict[trm]
-            clientPublic = addr[0]
-            utf8send(sock, f"EXPECT {clientPublic} {clientLocal} {port}", hostPublic, hostPort)
-            utf8send(sock, f"OK {hostPublic} {hostLocal} {hostPort}", addr)
-
-        case ["FRSH"]:
-            utf8send(sock, "REFRESHOK", addr)
-
-        case _:
-            print(f"invalid message [{msg}]")
-            utf8send(sock, f"INVALID MESSAGE", addr)
+main()
