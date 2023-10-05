@@ -1,210 +1,133 @@
 #! /usr/bin/env python3
 import socket
-from sys import argv
 import curses
-import os
-import sys
-import threading
+from sys import argv
+from socket_convenience import *
+from chatroom import Chatroom
 
-BUFF_SIZE = 65536
-def CreateSocket(timeout=0, port=0):
-    s = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
-    s.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, BUFF_SIZE)
-    if port:
-        s.bind(('', int(port)))
-    if timeout:
-        s.settimeout(timeout)
-    return s
-
-def GetLocalIp():
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.connect(('192.255.255.255', 1))
-    return s.getsockname()[0]
-
-def utf8send(sock, msg, ip, port=None):
-    if port == None:
-        ip, port = ip
-    print(f"sending to {ip}:{port} {msg}")
-    sock.sendto(msg.encode("utf8"), (ip, int(port)))
-
-server_addr = ("highlyderivative.games", 4800)
+# Holepunch server address and port
+SERVER_ADDR = ("highlyderivative.games", 4800)
+# Username to use as a key for holepunching. Will be phased out later for something more secure.
+USER = "poseidon"
 
 
-# list of username, message pairs
-chatlog = [["System", "Welcome!"]]
+def PeerHandshake(sock:socket.socket, ourPublic:str, peerPublic:str, peerLocal:str, tentativePort:int):
+    """Connect to a peer at either their public/local IP and a tentative Port"""
 
-
-
-
-
-def chatroom_listen(rsock, ip, port):
-    global chatlog
-    while True:
-        try:
-            msg, addr = rsock.recvfrom(BUFF_SIZE)
-            print("recieved", msg)
-            msg = msg.decode("utf8")
-            chatlog.append(["Them", msg])
-            chatlog = chatlog[-10:]
-
-        except socket.timeout:
-            pass
-
-
-def chatroom_send(message, ssock, ip, port):
-    chatlog.append(["You", message])
-    utf8send(ssock, message, ip, port)
-
-
-def chatroom(win, rsock, ssock, ip, port):
-    currentMessage = ""
-
-    logWindow = win.subwin(12, 70, 0, 0)
-    messageWindow = win.subwin(3, 70, 12, 0)
-    logWindow.border()
-    messageWindow.border()
-
-    curses.noecho()
-    curses.halfdelay(1)
-
-    print("Entering chatroom")
-    t = threading.Thread(target=chatroom_listen, args=(rsock, ip, port))
-    t.start()
-
-    while True:
-
-        try:
-            k = win.getkey()
-
-            if k == os.linesep:
-                chatroom_send(currentMessage, ssock, ip, port)
-                currentMessage = ""
-
-            elif k == "KEY_BACKSPACE":
-                currentMessage = currentMessage[:-1]
-
-            elif k == "^[":
-                os.system('stty sane')
-                exit()
-
-            else:
-                currentMessage += k
-            curses.doupdate()
-
-        except curses.error:
-            pass
-
-        except (KeyboardInterrupt, SystemExit):
-            os.system('stty sane')
-            exit()
-
-        logWindow.move(1,1)
-        for m in chatlog:
-            rev = curses.A_REVERSE if m[0] == "Them" else 0
-            logWindow.addstr(f"{m[0]}: {m[1]}\n ", rev)
-        logWindow.border()
-
-        messageWindow.clear()
-        messageWindow.border()
-        messageWindow.addstr(1, 1, currentMessage)
-
-        logWindow.refresh()
-        messageWindow.refresh()
-
-def connect_to_peer(recv_sock, public, local, port):
     print("Connecting to peer")
-    recv_sock.settimeout(5)
-    send_sock = CreateSocket(5)
+    sock.settimeout(10)
 
+    # We must figure out whether to use the public or local IP for the peer
     actual = ""
-    attempts = 5
-    while attempts > 0:
+    # We can try to contact the peer over this tentative port, but we may have to switch
+    port = tentativePort
+
+    ourLocal = GetLocalIp()
+
+    attempts = 0
+    while attempts < 5:
         try:
-            # Try to send to public
-            utf8send(send_sock, f"iam {GetLocalIp()}", public, port)
-            print(f"sending to {public}:{port}")
+            # Try to contact peer on internet
+            utf8send(sock, f"IAM {ourPublic} {GetSocketPort(sock)}", peerPublic, port)
+            # Try to contact peer on local network
+            utf8send(sock, f"IAM {ourLocal} {GetSocketPort(sock)}", peerLocal, port)
 
-            # Try to send to private
-            utf8send(send_sock, f"iam {GetLocalIp()}", local, port)
-            print(f"sending to {local}:{port}")
+            # Listen for message from peer
+            msg, _, p = utf8get(sock, True)
 
-            # Recieve
-            print(f"Recieving on {recv_sock.getsockname()})")
-            msg, addr = recv_sock.recvfrom(BUFF_SIZE)
-            msg = msg.decode("utf8")
-            if msg == f"iam {local}":
-                actual = local
-            elif msg == f"iam {public}":
-                actual = public
-            else:
-                print("That's my purse!", msg)
-                continue
-            attempts -= 1
+            match msg:
+                # Peer heard our IAM and is responding!
+                case ["YOUARE"]:
+                    # Send one final YOUARE back to them
+                    utf8send(sock, "YOUARE", actual, port)
+                    break
+
+                # Peer has made contact with us
+                case ["IAM", ip, p]:
+                    if ip == peerPublic:
+                        actual = peerPublic
+                    elif ip == peerLocal:
+                        actual = peerLocal
+                    else:
+                        # This is a third-party trying to connect
+                        print("That's my purse!")
+                        exit(1)
+
+                    port = p
+                    utf8send(sock, "YOUARE", actual, port)
+
+                case _:
+                    pass
 
         except socket.timeout:
-            attempts -= 1
             print("timeout")
             continue
         except KeyboardInterrupt:
             exit(0)
-
+        finally:
+            attempts += 1
 
     if not actual:
         print("couldn't find friend :(")
-        return
+        exit(1)
 
-    print("Found my friend at", actual, port)
-
-    curses.wrapper(chatroom, recv_sock, send_sock, actual, port)
+    return actual, port
+    
 
 
 if argv[1] == "host":
     sock = CreateSocket(20)
 
-    msg = f"HOST {GetLocalIp()}"
-    print("sending", msg)
-    utf8send(sock, msg, server_addr)
-    msg, addr = sock.recvfrom(BUFF_SIZE)
-    msg = msg.decode("utf8").split(" ")
+    # Request a spot in the holepunch server
+    utf8send(sock, f"HOST {GetLocalIp()} {USER}", SERVER_ADDR)
+    msg, _a, _p = utf8get(sock, True)
 
-    match msg:
-        case ["HOSTING", trm, port]:
-            print("Hosting at...", trm, sock.getsockname()[1])
-            sock.close()
-            sock = CreateSocket(port=int(port))
-            while True:
-                try:
-                    msg, addr = sock.recvfrom(BUFF_SIZE)
-                    msg = msg.decode("utf8").split(" ")
+    while True:
+        try:
+            # Listen
+            msg, _a, _p = utf8get(sock, split=True)
 
-                    match msg:
-                        case ["EXPECT", public, local, port]:
-                            connect_to_peer(sock, public, local, port)
+            match msg:
+                # Request for spot succeeded
+                case ["HOSTING", public]:
+                    print("Hosting at...", GetLocalIp(), public)
 
-                        case ["REFRESHOK"]:
-                            print(msg)
+                # Server says that a peer is trying to contact us
+                case ["EXPECT", ourpublic, public, local, port]:
+                    # Find the true IP and port of our peer (maybe do security stuff?)
+                    ip, port = PeerHandshake(sock, ourpublic, public, local, port)
+                    
+                    # Start demo chatroom
+                    cr = Chatroom(sock, ip, port)
+                    curses.wrapper(cr.main)
 
-                        case _:
-                            print("Invalid response", msg)
+                # Refreshed connection to server
+                case ["OK"]:
+                    pass
 
-                except socket.timeout:
-                    utf8send(sock, "FRSH", server_addr)
-                    continue
+                case _:
+                    print("Invalid response", msg)
 
-        case _:
-            print("Hosting failed for some reason", msg)
+        except socket.timeout:
+            # Refresh the port
+            utf8send(sock, "FRSH", SERVER_ADDR)
+            continue
+
 
 elif argv[1] == "connect":
     sock = CreateSocket(20)
-    trm = argv[2]
-    local = GetLocalIp()
-    utf8send(sock, f"CONN {local} {trm}", server_addr)
-    msg, addr = sock.recvfrom(BUFF_SIZE)
-    msg = msg.decode("utf8").split(" ")
+    # Send message to holepunch server
+    utf8send(sock, f"CONN {GetLocalIp()} {USER}", SERVER_ADDR)
 
+    # Listen for response
+    msg, addr, port = utf8get(sock, True)
     match msg:
-        case ["OK", public, local, port]:
-            connect_to_peer(sock, public, local, port)
+        # Recieved message with our peer's info
+        case ["CONNTO", ourpublic, local, public, port]:
+            ip, port = PeerHandshake(sock, ourpublic, public, local, port)
+            # Start demo chatroom
+            cr = Chatroom(sock, ip, port)
+            curses.wrapper(cr.main)
+            
         case _:
             print("Invalid message", msg)
-
