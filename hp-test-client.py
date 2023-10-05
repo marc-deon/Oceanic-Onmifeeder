@@ -40,6 +40,7 @@ def PeerHandshake(sock:socket.socket, ourPublic:str, peerPublic:str, peerLocal:s
                 case ["YOUARE"]:
                     # Send one final YOUARE back to them
                     port = p
+                    actual = ip
                     utf8send(sock, "YOUARE", actual, port)
                     break
 
