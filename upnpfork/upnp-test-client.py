@@ -143,7 +143,8 @@ def iam(s, addr, initport):
             if msg == "YOUARE":
                 print("Recieved YOUARE")
                 print(":)")
-                #curses.wrapper(chatroom, s, s, addr, port)
+                utf8send(s, "YOUARE", addr, port)
+                curses.wrapper(chatroom, s, s, addr, port)
                 exit(0)
 
             if msg == "IAM":
