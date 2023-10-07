@@ -8,7 +8,7 @@
             "name": "Python: Current File",
             "type": "python",
             "request": "launch",
-            "program": "hp-test-client.py",
+            "program": "${file}",
             "args": [
                 "connect"
             ],
