@@ -10,7 +10,6 @@ SERVER_ADDR = ("highlyderivative.games", 4800)
 # Username to use as a key for holepunching. Will be phased out later for something more secure.
 USER = "poseidon"
 
-class RUDP()
 
 
 def PeerHandshake(sock:socket.socket, ourPublic:str, peerPublic:str, peerLocal:str, tentativePort:int):
