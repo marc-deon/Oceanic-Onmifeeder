@@ -139,11 +139,9 @@ class RUDP:
                     if (ip, addr) != self.peer:
                         print("Skipping unknown address", ip, addr, "VS", self.peer)
                         continue
-
+                    
                     incoming = RudpMessage.Decode(msg)
-                    if incoming.system:
-                        continue
-                    else:
+                    if not incoming.system:
                         # TODO: ...Maybe. Handle disconnect and regress here?
                         self._SendAck(incoming)
                         break
