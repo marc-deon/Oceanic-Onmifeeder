@@ -248,7 +248,7 @@ if __name__ == "__main__":
 
         if 'm' in label:
             sock.Send("5+5")
-            print(sock.Receive)
+            print(sock.Receive())
         else:
             m = sock.Receive()
             print(m)
