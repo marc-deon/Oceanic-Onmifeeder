@@ -246,21 +246,27 @@ if __name__ == "__main__":
     def _test(sock:RUDP, ip:str, port:int, label:str):
         sock.connect(ip, port)
 
-        # if 'm' in label:
-        #     sock.Send("5+5")
-        #     print(sock.Receive())
-        # else:
-        #     m = sock.Receive()
-        #     print(m)
-        #     ans = sum(int(x) for x in m.data.split("+"))
-        #     sock.Send(str(ans))
+        if 'm' in label:
+            print("Sending math request")
+            sock.Send("5+5")
+            print(sock.Receive())
+        else:
+            print("Receiving math request")
+            m = sock.Receive()
+            print(m)
+            nums = m.data.split("+")
+            ans = int(nums[0]) + int(nums[1])
+            sock.Send(str(ans))
 
-        sock.Send(f"I am {label}")
-        m = sock.Receive()
-        print(m)
-        sock.Send(f"Yo fr? You're {m.data.split(' ')[-1]}?")
-        sock.Send(f"That's crazy.")
-        print(sock.Receive())
+        print(sock.state)
+        
+
+        # sock.Send(f"I am {label}")
+        # m = sock.Receive()
+        # print(m)
+        # sock.Send(f"Yo fr? You're {m.data.split(' ')[-1]}?")
+        # sock.Send(f"That's crazy.")
+        # print(sock.Receive())
         # print(sock.Receive())
 
 
