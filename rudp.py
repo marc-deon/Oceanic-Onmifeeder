@@ -247,8 +247,9 @@ if __name__ == "__main__":
         sock.connect(ip, port)
 
         sock.Send(f"I am {label}")
-        print(sock.Receive())
-        sock.Send(f"Yo fr?")
+        m = sock.Receive()
+        print(m)
+        sock.Send(f"Yo fr? You're{m.data.split(' ')[-1]}")
         sock.Send(f"That's crazy.")
         print(sock.Receive())
         print(sock.Receive())
