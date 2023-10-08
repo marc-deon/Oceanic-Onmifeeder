@@ -261,7 +261,7 @@ if __name__ == "__main__":
         sock.Send(f"Yo fr? You're {m.data.split(' ')[-1]}?")
         sock.Send(f"That's crazy.")
         print(sock.Receive())
-        print(sock.Receive())
+        # print(sock.Receive())
 
 
     from sys import argv
