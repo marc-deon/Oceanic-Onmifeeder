@@ -49,6 +49,10 @@ class RUDP:
 
     MAX_ATTEMPTS = 5
 
+    def _sendto(self, data, dest):
+        print(f"sending {data} to {dest}")
+        self.socket.sendto(data, dest)
+
     def __init__(self, timeout:int=0, port:int=0) -> 'RUDP':
         self.state  : State           = State.CLOSED
         self.socket : socket.socket   = CreateSocket(timeout=timeout, port=port)
@@ -70,13 +74,13 @@ class RUDP:
         message = RudpMessage(self.lastId, system, msg)
         
         msg = message.Encode()
-        self.socket.sendto(msg, self.peer)
+        self._sendto(msg, self.peer)
         self._WaitForAck(id)
 
 
     def _SendAck(self, incoming:RudpMessage) -> None:
         ack = RudpMessage(incoming.id, True, "ACK").Encode()
-        self.socket.sendto(ack, self.peer)
+        self._sendto(ack, self.peer)
 
 
     def _WaitForAck(self, id:int) -> None:
