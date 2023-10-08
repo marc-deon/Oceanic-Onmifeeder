@@ -78,6 +78,7 @@ class RUDP:
         ack = RudpMessage(incoming.id, True, "ACK").Encode()
         self.socket.sendto(ack, self.peer)
 
+
     def _WaitForAck(self, id:int) -> None:
 
         attempts = 0
@@ -136,7 +137,8 @@ class RUDP:
                         print("Skipping unknown address", ip, addr, "VS", self.peer)
                         continue
                     incoming = RudpMessage.Decode(msg)
-                    self._SendAck(incoming)
+                    if not incoming.system:
+                        self._SendAck(incoming)
 
                 except TimeoutError:
                     attempts += 1
