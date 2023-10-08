@@ -137,6 +137,7 @@ class RUDP:
                         continue
                     incoming = RudpMessage.Decode(msg)
                     if not incoming.system:
+                        # TODO: ...Maybe. Handle disconnect and regress here?
                         self._SendAck(incoming)
 
                 except TimeoutError:
@@ -253,14 +254,12 @@ if __name__ == "__main__":
 
         if 'm' in label:
             print("Sending math request")
-            sock.Send("5 5")
+            sock.Send("5+5")
             print(sock.Receive())
         else:
             print("Receiving math request")
             m = sock.Receive()
-            print(m)
-            nums = m.data.split(" ")
-            ans = int(nums[0]) + int(nums[1])
+            ans = sum(int(x) for x in m.data.split("+"))
             sock.Send(str(ans))
 
         print(sock.state)
