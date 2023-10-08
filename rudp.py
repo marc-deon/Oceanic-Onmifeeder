@@ -248,18 +248,18 @@ if __name__ == "__main__":
 
         if 'm' in label:
             print("Sending math request")
-            sock.Send("5+5")
+            sock.Send("5 5")
             print(sock.Receive())
         else:
             print("Receiving math request")
             m = sock.Receive()
             print(m)
-            nums = m.data.split("+")
+            nums = m.data.split(" ")
             ans = int(nums[0]) + int(nums[1])
             sock.Send(str(ans))
 
         print(sock.state)
-        
+
 
         # sock.Send(f"I am {label}")
         # m = sock.Receive()
