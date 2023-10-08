@@ -246,34 +246,27 @@ if __name__ == "__main__":
     def _test(sock:RUDP, ip:str, port:int, label:str):
         sock.connect(ip, port)
 
-        if 'm' in label:
-            sock.Send("5+5")
-            print(sock.Receive)
-        else:
-            m = sock.Receive()
-            print(m)
-            ans = sum(int(x) for x in m.data.split("+"))
-            sock.Send(str(ans))
+        # if 'm' in label:
+        #     sock.Send("5+5")
+        #     print(sock.Receive)
+        # else:
+        #     m = sock.Receive()
+        #     print(m)
+        #     ans = sum(int(x) for x in m.data.split("+"))
+        #     sock.Send(str(ans))
 
-        # sock.Send(f"I am {label}")
-        # m = sock.Receive()
-        # print(m)
-        # sock.Send(f"Yo fr? You're {m.data.split(' ')[-1]}?")
-        # sock.Send(f"That's crazy.")
-        # print(sock.Receive())
-        # print(sock.Receive())
+        sock.Send(f"I am {label}")
+        m = sock.Receive()
+        print(m)
+        sock.Send(f"Yo fr? You're {m.data.split(' ')[-1]}?")
+        sock.Send(f"That's crazy.")
+        print(sock.Receive())
+        print(sock.Receive())
 
 
     from sys import argv
 
     ip, port, label = argv[1:]
+    print(ip, port, label)
     sock = RUDP(timeout=1, port=port)
     _test(sock, ip, 4800 if port == "4801" else 4801, label)
-
-    # if "A" in argv:
-    #     sock = RUDP(timeout=1, port=4801)
-    #     _test(sock, '127.0.0.1', 4802, "A")
-
-    # elif "B" in argv:
-    #     sock = RUDP(timeout=1, port=4802)
-    #     _test(sock, '127.0.0.1', 4801, "B")
