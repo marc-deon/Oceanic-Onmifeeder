@@ -256,10 +256,14 @@ if __name__ == "__main__":
 
     from sys import argv
 
-    if "A" in argv:
-        sock = RUDP(timeout=1, port=4801)
-        _test(sock, '127.0.0.1', 4802, "A")
+    ip, port, label = argv[1:]
+    sock = RUDP(timeout=1, port=port)
+    _test(sock, ip, 4800 if port == "4801" else 4801, label)
 
-    elif "B" in argv:
-        sock = RUDP(timeout=1, port=4802)
-        _test(sock, '127.0.0.1', 4801, "B")
+    # if "A" in argv:
+    #     sock = RUDP(timeout=1, port=4801)
+    #     _test(sock, '127.0.0.1', 4802, "A")
+
+    # elif "B" in argv:
+    #     sock = RUDP(timeout=1, port=4802)
+    #     _test(sock, '127.0.0.1', 4801, "B")
