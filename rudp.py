@@ -15,16 +15,14 @@ class RudpMessage:
     def Encode(self) -> bytes:
         """Message -> dict -> json"""
         # return base64.b64encode(json.dumps(dataclasses.asdict(self)).encode())
-        d = dataclasses.asdict(self)
-        return json.dumps(d).encode()
+        return json.dumps(dataclasses.asdict(self)).encode()
 
     # TODO: Add base64 back in
     @classmethod
     def Decode(self, msg:bytes) -> 'RudpMessage':
         """Message <- dict <- json"""
         # return RudpSegment(**json.loads(base64.b64decode(msg)))
-        m = msg.decode()
-        x = json.loads(m)
+        x = json.loads(msg.decode())
         return RudpMessage(**x)
 
 
@@ -50,6 +48,7 @@ class RUDP:
     MAX_ATTEMPTS = 5
 
     def _sendto(self, data, dest):
+        """Passthrough to socket's sendto()."""
         print(f"sending {data} to {dest}")
         self.socket.sendto(data, dest)
 
@@ -62,29 +61,33 @@ class RUDP:
     
 
     def _recvfrom(self) -> tuple[bytes, str, int]:
+        """Passthrough to socket's recvfrom(), but ip and addr are separated."""
         msg, (ip, addr) = self.socket.recvfrom(BUFF_SIZE)
         return msg, ip, addr
 
 
     def Send(self, msg:str, system:bool=False) -> None:
+        """Sends a given string to the connected RUDP socket."""
         if self.state != State.CONNECTED:
             raise RudpInvalidState("Can only send while connected!")
 
         self.lastId += 1
         message = RudpMessage(self.lastId, system, msg)
         
-        msg = message.Encode()
-        self._sendto(msg, self.peer)
+        self._sendto(message.Encode(), self.peer)
         self._WaitForAck(id)
 
 
     def _SendAck(self, incoming:RudpMessage) -> None:
+        """Send an acknowledgement message in response to given incoming."""
         ack = RudpMessage(incoming.id, True, "ACK").Encode()
         self._sendto(ack, self.peer)
 
 
+    # TODO: This being completely from Receive() bugs me. There's a good bit of
+    # Code shared. Merge? Factor out common?
     def _WaitForAck(self, id:int) -> None:
-
+        """Wait for acknowledgement, in the mean time queueing other received messages. Throw error upon timeout."""
         attempts = 0
         while attempts < self.MAX_ATTEMPTS:
             try:
@@ -119,10 +122,11 @@ class RUDP:
                 attempts += 1
         
         if attempts == self.MAX_ATTEMPTS:
-            raise TimeoutError
+            raise RudpTimeout()
 
 
     def Receive(self) -> RudpMessage:
+        """Wait for message from connected socket, return it and send an ACK."""
         if self.state != State.CONNECTED: #and self.state != State.SENDING:
             raise RudpInvalidState("Can only recieve while connected or waiting for send-ack!")
 
@@ -142,10 +146,10 @@ class RUDP:
 
                     incoming = RudpMessage.Decode(msg)
                     if incoming.system:
+                        
                         continue
-                    
+
                     else:
-                        # TODO: ...Maybe. Handle disconnect and regress here?
                         self._SendAck(incoming)
                         break
 
@@ -153,13 +157,14 @@ class RUDP:
                     attempts += 1
             
             if attempts == self.MAX_ATTEMPTS:
-                raise TimeoutError
+                raise RudpTimeout()
 
         assert(incoming)
         return incoming
 
 
     def _TryConnect(self, mainIp:str, tentativePort:int, altIp:str):
+        """Handshake function to connect to connect to a main/alt IP."""
         sock = self.socket
         
         # We must figure out whether to use the public or local IP for the peer
@@ -231,6 +236,8 @@ class RUDP:
 
 
     def Connect(self, ip:str, initialPort:int, altIp:str=None):
+        """Connect to peer RUDP port."""
+
         match self.state:
             case State.CLOSED:
                 try:
@@ -257,35 +264,39 @@ class RUDP:
 
 
 if __name__ == "__main__":
-
-    def _test(sock:RUDP, ip:str, port:int, label:str):
-        sock.Connect(ip, port)
-
-        if 'm' in label:
-            print("Sending math request")
-            sock.Send("5+5")
-            print(sock.Receive())
-        else:
-            print("Receiving math request")
-            m = sock.Receive()
-            ans = sum(int(x) for x in m.data.split("+"))
-            sock.Send(str(ans))
-
-        print(sock.state)
-
-
-        # sock.Send(f"I am {label}")
-        # m = sock.Receive()
-        # print(m)
-        # sock.Send(f"Yo fr? You're {m.data.split(' ')[-1]}?")
-        # sock.Send(f"That's crazy.")
-        # print(sock.Receive())
-        # print(sock.Receive())
-
+    # Testing stuff
 
     from sys import argv
-
     ip, port, label = argv[1:]
     print(ip, port, label)
     sock = RUDP(timeout=1, port=port)
-    _test(sock, ip, 4800 if port == "4801" else 4801, label)
+
+    port = 4800 if port == "4801" else 4801
+
+
+    sock.Connect(ip, port)
+
+    #########
+    ## Test A
+
+    if 'm' in label:
+        print("Sending math request")
+        sock.Send("15+5")
+        print(sock.Receive())
+    else:
+        print("Receiving math request")
+        m = sock.Receive()
+        ans = sum(int(x) for x in m.data.split("+"))
+        sock.Send(str(ans))
+
+    print(sock.state)
+
+    #########
+    ## Test B
+    # sock.Send(f"I am {label}")
+    # m = sock.Receive()
+    # print(m)
+    # sock.Send(f"Yo fr? You're {m.data.split(' ')[-1]}?")
+    # sock.Send(f"That's crazy.")
+    # print(sock.Receive())
+    # print(sock.Receive())
