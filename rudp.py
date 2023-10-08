@@ -62,7 +62,7 @@ class RUDP:
         return msg, ip, addr
 
 
-    def Send(self, msg:str, system:bool=False):
+    def Send(self, msg:str, system:bool=False) -> None:
         if self.state != State.CONNECTED:
             raise RudpInvalidState("Can only send while connected!")
 
@@ -74,8 +74,11 @@ class RUDP:
         self._WaitForAck(id)
 
 
-    def _WaitForAck(self, id):
-        # Check queue?
+    def _SendAck(self, incoming:RudpMessage) -> None:
+        ack = RudpMessage(incoming.id, True, "ACK").Encode()
+        self.socket.sendto(ack, self.peer)
+
+    def _WaitForAck(self, id:int) -> None:
 
         attempts = 0
         while attempts < self.MAX_ATTEMPTS:
@@ -100,8 +103,8 @@ class RUDP:
 
                     case [False, _, _]:
                         self.recvQueue.append(incoming)
-                        ack = RudpMessage(incoming.id, True, "ACK").Encode()
-                        self.socket.sendto(ack, self.peer)
+                        self._SendAck(incoming)
+                        
 
 
                     case _:
@@ -133,6 +136,7 @@ class RUDP:
                         print("Skipping unknown address", ip, addr, "VS", self.peer)
                         continue
                     incoming = RudpMessage.Decode(msg)
+                    self._SendAck(incoming)
 
                 except TimeoutError:
                     attempts += 1
