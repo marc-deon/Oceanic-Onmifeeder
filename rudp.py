@@ -118,7 +118,6 @@ class RUDP:
             raise TimeoutError
 
 
-
     def Receive(self) -> RudpMessage:
         if self.state != State.CONNECTED: #and self.state != State.SENDING:
             raise RudpInvalidState("Can only recieve while connected or waiting for send-ack!")
@@ -137,8 +136,8 @@ class RUDP:
                         print("Skipping unknown address", ip, addr, "VS", self.peer)
                         continue
                     incoming = RudpMessage.Decode(msg)
-                    if not incoming.system:
-                        self._SendAck(incoming)
+                    # if not incoming.system:
+                    #     self._SendAck(incoming)
 
                 except TimeoutError:
                     attempts += 1
