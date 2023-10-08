@@ -136,8 +136,8 @@ class RUDP:
                         print("Skipping unknown address", ip, addr, "VS", self.peer)
                         continue
                     incoming = RudpMessage.Decode(msg)
-                    # if not incoming.system:
-                    #     self._SendAck(incoming)
+                    if not incoming.system:
+                        self._SendAck(incoming)
 
                 except TimeoutError:
                     attempts += 1
