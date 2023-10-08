@@ -139,10 +139,14 @@ class RUDP:
                     if (ip, addr) != self.peer:
                         print("Skipping unknown address", ip, addr, "VS", self.peer)
                         continue
+
                     incoming = RudpMessage.Decode(msg)
-                    if not incoming.system:
+                    if incoming.system:
+                        continue
+                    else:
                         # TODO: ...Maybe. Handle disconnect and regress here?
                         self._SendAck(incoming)
+                        break
 
                 except TimeoutError:
                     attempts += 1
@@ -225,7 +229,7 @@ class RUDP:
         self.peer = actual, port
 
 
-    def connect(self, ip:str, initialPort:int, altIp:str=None):
+    def Connect(self, ip:str, initialPort:int, altIp:str=None):
         match self.state:
             case State.CLOSED:
                 try:
@@ -237,11 +241,11 @@ class RUDP:
                 raise RudpInvalidState("Can only connect from a closed state!")
 
 
-    def disconnect(self) -> None:
+    def Disconnect(self) -> None:
         self.state = State.CLOSED
         self.Send("DISCONNECT", True)
 
-    def regress(self) -> socket.socket:
+    def Regress(self) -> socket.socket:
         """Disable usage as RELIABLE UDP, but return regular UDP socket"""
         self.state = State.REGRESSED
         self.Send("REGRESS", True)
@@ -254,7 +258,7 @@ class RUDP:
 if __name__ == "__main__":
 
     def _test(sock:RUDP, ip:str, port:int, label:str):
-        sock.connect(ip, port)
+        sock.Connect(ip, port)
 
         if 'm' in label:
             print("Sending math request")
