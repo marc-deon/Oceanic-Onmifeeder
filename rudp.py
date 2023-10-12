@@ -25,6 +25,9 @@ class RudpMessage:
         x = json.loads(msg.decode())
         return RudpMessage(**x)
 
+    @property
+    def string(self) -> str:
+        return self.data.decode()
 
 class State(enum.Enum):
     CLOSED      = enum.auto()
@@ -171,6 +174,7 @@ class RUDP:
         actual = ""
         # We can try to contact the peer over this tentative port, but we may have to switch
         port = tentativePort
+        assert isinstance(port, int)
 
         attempts = 0
         while attempts < self.MAX_ATTEMPTS:
