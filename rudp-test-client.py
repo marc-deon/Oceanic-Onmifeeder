@@ -109,11 +109,15 @@ if argv[1] == "host":
                     sock.close()
                     
                     # Start demo chatroom
-                    sock = RUDP(0.5, ourport)
-                    sock.Connect(public, int(port), local)
+                    sendSock = RUDP(0.5, ourport)
+                    recvSock = RUDP(0.5)
+                    sendSock.Connect(local, int(port))
+                    
+                    utf8send(sock, f"HOST {GetLocalIp()} {USER}", SERVER_ADDR)
+                    recvSock.Connect(local, int(port))
 
                     # Start demo chatroom
-                    cr = Chatroom(sock)
+                    cr = Chatroom(sendSock, recvSock)
                     curses.wrapper(cr.main)
 
                 # Refreshed connection to server
@@ -144,9 +148,14 @@ elif argv[1] == "connect":
             sock.close()
 
             # Start demo chatroom
-            sock = RUDP(0.5, ourport)
-            sock.Connect(public, int(port), local)
-            cr = Chatroom(sock)
+            sendSock = RUDP(0.5, ourport)
+            recvSock = RUDP(0.5)
+            sendSock.Connect(local, int(port))
+
+
+            utf8send(recvSock, f"CONN {GetLocalIp()} {USER}", SERVER_ADDR)
+            recvSock.Connect(local, int(port))
+            cr = Chatroom(sendSock, recvSock)
             curses.wrapper(cr.main)
             
         case _:

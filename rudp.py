@@ -68,6 +68,12 @@ class RUDP:
         msg, (ip, addr) = self.socket.recvfrom(BUFF_SIZE)
         return msg, ip, addr
 
+    # def _frsh(self):
+    #     self.socket.sendto("FRSH".encode(), ('highlyderivative.games', 4800))
+    #     print("sent frsh")
+    #     msg, (ip, addr) = self.socket.recvfrom(BUFF_SIZE)
+    #     print(msg)
+
 
     def Send(self, msg:str, system:bool=False) -> None:
         """Sends a given string to the connected RUDP socket."""
@@ -181,6 +187,7 @@ class RUDP:
             try:
                 # Try to contact peer on internet
                 outgoing = RudpMessage(-1, True, f'HAND1').Encode()
+                print("sending", outgoing, (mainIp, port))
                 sock.sendto(outgoing, (mainIp, port))
 
                 if altIp:
@@ -190,10 +197,12 @@ class RUDP:
                 # Listen for message from peer
                 msg, (ip, p) = sock.recvfrom(BUFF_SIZE)
                 msg = RudpMessage.Decode(msg).data.split(" ")
+                print("received", msg)
 
                 match msg:
                     # Peer has made contact with us
                     case ["HAND1"]:
+                        print("case1")
                         if ip == mainIp:
                             actual = mainIp
 
@@ -211,6 +220,7 @@ class RUDP:
 
                     # Peer heard our IAM and is responding!
                     case ["HAND2"]:
+                        print("case2")
                         # Send one final YOUARE back to them
                         port = p
                         actual = ip
@@ -219,6 +229,8 @@ class RUDP:
                         break
 
                     case _:
+                        print("Malformed message")
+                        exit(1)
                         pass
 
             except socket.timeout:
