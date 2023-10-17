@@ -36,24 +36,27 @@ def main():
         msg, (addr, port) = s.recvfrom(BUFF_SIZE)
         msg = msg.decode('utf8').split(" ")
         match msg:
-            case ["HOST", local, username]:
-                userdict[username] = local, addr, port
+            case ["HOST", local, username, localport]:
+                userdict[username] = local, addr, port, localport
                 utf8send(s, f"HOSTING", addr, port)
 
             case ["FRSH"]:
-                utf8send(s, "OK", addr, port)
+                #utf8send(s, "OK", addr, port)
+                pass
 
-            case ["CONN", local, username]:
+            case ["CONN", local, username, localport]:
                 if username in userdict:
-                    hostlocal, hostaddr, hostport = userdict[username]
-                    utf8send(s, f"EXPECT {hostaddr} {addr} {local} {port}", hostaddr, hostport)
-                    utf8send(s, f"CONNTO {addr} {hostlocal} {hostaddr} {hostport}", addr, port)
+                    hostlocal, hostaddr, hostport, hostlocalport = userdict[username]
+                    expect = f"EXPECT {addr} {local} {port} {localport}"
+                    connto = f"CONNTO {hostaddr} {hostlocal} {hostport} {hostlocalport}"
+                    print(expect)
+                    print(connto)
+                    utf8send(s, expect, hostaddr, hostport)
+                    utf8send(s, connto, addr, port)
                     userdict.pop(username)
                 else:
                     utf8send(s, f"USERNAME_NOT_PRESENT", addr, port)
             case _:
-                pass
-    pass
-
+                print("Unknown message", msg)
 
 main()
