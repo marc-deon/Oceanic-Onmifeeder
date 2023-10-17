@@ -55,13 +55,14 @@ class RUDP:
         print(f"sending {data} to {dest}")
         self.socket.sendto(data, dest)
 
-    def __init__(self, timeout:int=0, port:int=0) -> 'RUDP':
+    def __init__(self, timeout:int=0, port:int=0, socket=None) -> 'RUDP':
         self.state  : State           = State.CLOSED
-        self.socket : socket.socket   = CreateSocket(timeout=timeout, port=port)
+        self.socket : socket.socket   = CreateSocket(timeout=timeout, port=port) if socket == None else socket
         self.peer   : tuple[str, int] = None # IP-Port pair
         self.lastId : int             = -1
+        # TODO: Change to dict of lists
         self.recvQueue : list[RudpMessage] = []
-    
+
 
     def _recvfrom(self) -> tuple[bytes, str, int]:
         """Passthrough to socket's recvfrom(), but ip and addr are separated."""
@@ -82,7 +83,7 @@ class RUDP:
 
         self.lastId += 1
         message = RudpMessage(self.lastId, system, msg)
-        
+
         self._sendto(message.Encode(), self.peer)
         self._WaitForAck(id)
 
@@ -113,23 +114,25 @@ class RUDP:
                         return
 
                     case [True, "HAND1", _]:
+                        self._SendAck(incoming)
+
                         pass
-                    
+
                     case [True, "HAND2", _]:
+                        self._SendAck(incoming)
                         pass
 
                     case [False, _, _]:
                         self.recvQueue.append(incoming)
                         self._SendAck(incoming)
-                        
 
 
                     case _:
                         raise NotImplementedError()
-                    
+
             except TimeoutError:
                 attempts += 1
-        
+
         if attempts == self.MAX_ATTEMPTS:
             raise RudpTimeout()
 
@@ -155,16 +158,16 @@ class RUDP:
 
                     incoming = RudpMessage.Decode(msg)
                     if incoming.system:
-                        
+
                         continue
 
                     else:
-                        self._SendAck(incoming)
+                        #self._SendAck(incoming)
                         break
 
                 except TimeoutError:
                     attempts += 1
-            
+
             if attempts == self.MAX_ATTEMPTS:
                 raise RudpTimeout()
 
@@ -172,10 +175,10 @@ class RUDP:
         return incoming
 
 
-    def _TryConnect(self, mainIp:str, tentativePort:int, altIp:str):
+    def _TryConnect(self, mainIp:str, tentativePort:int, altIp:str, altPort:int):
         """Handshake function to connect to connect to a main/alt IP."""
         sock = self.socket
-        
+
         # We must figure out whether to use the public or local IP for the peer
         actual = ""
         # We can try to contact the peer over this tentative port, but we may have to switch
@@ -186,13 +189,19 @@ class RUDP:
         while attempts < self.MAX_ATTEMPTS:
             try:
                 # Try to contact peer on internet
-                outgoing = RudpMessage(-1, True, f'HAND1').Encode()
+                outgoing = RudpMessage(-2, True, f'HAND1').Encode()
                 print("sending", outgoing, (mainIp, port))
                 sock.sendto(outgoing, (mainIp, port))
 
                 if altIp:
                     # Try to contact peer on local network
                     sock.sendto(outgoing, (altIp, port))
+
+                if altPort:
+                    sock.sendto(outgoing, (mainIp, altPort))
+                    if altIp:
+                        sock.sendto(outgoing, (altIp, altPort))
+
 
                 # Listen for message from peer
                 msg, (ip, p) = sock.recvfrom(BUFF_SIZE)
@@ -216,6 +225,7 @@ class RUDP:
 
                         port = p
                         outgoing = RudpMessage(-1, True, "HAND2").Encode()
+                        print("sending hand2", outgoing)
                         sock.sendto(outgoing, (actual, port))
 
                     # Peer heard our IAM and is responding!
@@ -251,13 +261,15 @@ class RUDP:
         self.peer = actual, port
 
 
-    def Connect(self, ip:str, initialPort:int, altIp:str=None):
+    def Connect(self, ip:str, altIp:str, initialPort:int, altPort:int):
         """Connect to peer RUDP port."""
+        ip = str(ip); altIp = str(altIp); initialPort = int(initialPort); altPort = int(altPort)
+
 
         match self.state:
             case State.CLOSED:
                 try:
-                    self._TryConnect(ip, initialPort, altIp)
+                    self._TryConnect(ip, initialPort, altIp, altPort)
                 except Exception as e:
                     raise e
 
@@ -274,45 +286,13 @@ class RUDP:
         self.state = State.REGRESSED
         self.Send("REGRESS", True)
         return self.socket
-    
+
+    def Virtual(label:str):
+        pass
+
 ################################################################################
 ################################################################################
 
 
 if __name__ == "__main__":
-    # Testing stuff
-
-    from sys import argv
-    ip, port, label = argv[1:]
-    print(ip, port, label)
-    sock = RUDP(timeout=1, port=port)
-
-    port = 4800 if port == "4801" else 4801
-
-
-    sock.Connect(ip, port)
-
-    #########
-    ## Test A
-
-    if 'm' in label:
-        print("Sending math request")
-        sock.Send("15+5")
-        print(sock.Receive())
-    else:
-        print("Receiving math request")
-        m = sock.Receive()
-        ans = sum(int(x) for x in m.data.split("+"))
-        sock.Send(str(ans))
-
-    print(sock.state)
-
-    #########
-    ## Test B
-    # sock.Send(f"I am {label}")
-    # m = sock.Receive()
-    # print(m)
-    # sock.Send(f"Yo fr? You're {m.data.split(' ')[-1]}?")
-    # sock.Send(f"That's crazy.")
-    # print(sock.Receive())
-    # print(sock.Receive())
+    pass
