@@ -22,7 +22,7 @@ def GetLocalIp():
     return _local_ip
 
 def GetSocketPort(s):
-    return s.getsockname()[1]
+    return int(s.getsockname()[1])
 
 def utf8send(sock, msg, ip, port=None):
     if port == None:
