@@ -1,10 +1,45 @@
 #! /usr/bin/env python3
+
+###############################################################################
+#  Reliable UDP  #
+##################
+#
+# This module offers two classes:
+# 1. RudpMessage, which is fairly self explanitory
+# 2. RudpConnection, which is a little more out-there.
+#
+# This module was written to solve two needs:
+# 1. Establishment of a reliable (i.e. has acknowledgements) connection over
+#    a regular UDP port, with some support for holepunching techniques.
+# 2. Division of that connection into virtual ports, so
+#    that the holepunching only ever has to be done once.
+#
+# The main way that this should be used is:
+#
+#   conn = RudpConnection(...)
+#   conn.Connect(...)
+#   port = conn.Virtual(localPort, remotePort)
+#   
+#   try:
+#       port.Send("Some message")
+#   except RudpTimeout:
+#       print("We got no acknowledgement.")
+#
+#   try:
+#       rudp_message = port.Receive()
+#       print("message contains", rudp_message.string)
+#   except RudpTimeout:
+#       print("We got no response.")
+#
+# I very much hope that this is the final API.
+#
+###############################################################################
+
 import dataclasses
 from dataclasses import dataclass
 import json
 from socket_convenience import *
 
-class RudpInvalidState(Exception): pass
 class RudpTimeout(Exception): pass
 class RudpFailedToConnect(Exception): pass
 
@@ -35,11 +70,12 @@ class RudpMessage:
 
     @property
     def string(self) -> str:
+        """Message data as string"""
         return self.data.decode()
 
 
 class RudpPort:
-
+    """(Virtual) RUDP port"""
     @property
     def socket(self):
         return self.parent.socket
@@ -54,11 +90,13 @@ class RudpPort:
 
 
     def Send(self, msg:str, system:bool=False) -> None:
+        """Send a message optionally marked as a system message."""
+        # TODO: We should maybe have a private _SendSystem instead for this.
         self.parent.Send(self, msg, system)
 
 
     def Receive(self) -> RudpMessage:
-        """Wait for message from connected socket, return it and send an ACK."""
+        """Wait for message, return it and send an ACK. Also queue message for other ports in the mean time."""
 
         incoming = False
         # Check queue
@@ -99,8 +137,6 @@ class RudpPort:
     
 
 class RudpConnection:
-    """Reliable UDP port"""
-
     MAX_ATTEMPTS = 5
 
     def __init__(self, timeout:int=0, port:int=0, socket=None) -> 'RudpConnection':
@@ -188,7 +224,7 @@ class RudpConnection:
             raise RudpTimeout()
 
 
-    def _TryConnect(self, mainIp:str, tentativePort:int, altIp:str, altPort:int):
+    def _TryConnect(self, mainIp:str, tentativePort:int, altIp:str, altPort:int) -> None:
         """Handshake function to connect to connect to a main/alt IP."""
         sock = self.socket
 
@@ -277,17 +313,10 @@ class RudpConnection:
         self._TryConnect(ip, initialPort, altIp, altPort)
 
 
-    def Virtual(self, port:int, peerPort:int) -> 'RudpPort':
+    def Virtual(self, port:int, peerPort:int) -> RudpPort:
         """Create a virtual RUDP port on this connection and return it."""
         if port in self.ports:
             raise KeyError("Duplicate port number")
 
         p = self.ports[port] = RudpPort(port, peerPort, self)
         return p
-
-################################################################################
-################################################################################
-
-
-if __name__ == "__main__":
-    pass
