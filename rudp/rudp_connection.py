@@ -58,15 +58,55 @@ class RudpConnection:
         self.socket.sendto(data, dest)
 
 
-    def Send(self, port:RudpPort, msg:str, system:bool=False) -> None:
+    def _Send(self, port:RudpPort, msg:str, system:bool) -> None:
         """Sends a given string to the connected RUDP socket."""
         
         message = RudpMessage(port.port, port.peerPort, system, port.lastId, msg)
 
         self._sendto(message.Encode(), self.peer)
-        self._WaitForAck(port.lastId, port)
+        if not port.stream:
+            self._WaitForAck(port.lastId, port)
         port.lastId += 1
 
+
+    def _Receive(self, port) -> RudpMessage:
+            incoming = False
+            # Check queue
+            if len(port.queue) > 0:
+                incoming = port.queue.pop(0)
+
+            else:
+                attempts = 0
+                while attempts < self.MAX_ATTEMPTS:
+                    try:
+                        msg, (ip, addr) = self.socket.recvfrom(BUFF_SIZE)
+                        if (ip, addr) != self.peer:
+                            # This is a stranger, ignore them
+                            continue
+
+                        incoming = RudpMessage.Decode(msg)
+
+                        if not port.stream:
+                            if (not incoming.system) or (incoming.string != "ACK"):
+                                # The only time we're not going to send ACK is when the message we receive
+                                # it IS a system message AND the message itself is ACK
+                                self._SendAck(incoming)
+
+                        if incoming.destPort != port.port:
+                            # Add to other port's queue
+                            self.ports[incoming.destPort].queue.append(incoming)
+
+                        if not incoming.system:
+                            break
+
+                    except TimeoutError:
+                        attempts += 1
+
+                if attempts == self.MAX_ATTEMPTS:
+                    raise RudpTimeout()
+                
+            assert(incoming)
+            return incoming
 
     def _recvfrom(self) -> tuple[bytes, str, int]:
         """Passthrough to socket's recvfrom(), but ip and addr are separated."""
