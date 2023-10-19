@@ -1,15 +1,20 @@
 #! /usr/bin/env python3
 import dataclasses
 from dataclasses import dataclass
-import enum
 import json
 from socket_convenience import *
 
+class RudpInvalidState(Exception): pass
+class RudpTimeout(Exception): pass
+class RudpFailedToConnect(Exception): pass
+
 @dataclass
 class RudpMessage:
-    id:int
+    srcPort:int
+    destPort:int
     system:bool
-    data:bytearray
+    id:int
+    data:bytes
 
     # TODO: Add base64 back in
     def Encode(self) -> bytes:
@@ -23,45 +28,100 @@ class RudpMessage:
         """Message <- dict <- json"""
         # return RudpSegment(**json.loads(base64.b64decode(msg)))
         x = json.loads(msg.decode())
-        return RudpMessage(**x)
+        m = RudpMessage(**x)
+        # Since json doesn't support bytes, the data will come in as a string
+        m.data = bytes(m.data, 'utf8')
+        return m
 
     @property
     def string(self) -> str:
         return self.data.decode()
 
-class State(enum.Enum):
-    CLOSED      = enum.auto()
-    CONNECTED   = enum.auto()
-    SENDING     = enum.auto()
-    RECIEVING   = enum.auto()
-    REGRESSED   = enum.auto()
 
-class RudpInvalidState(Exception):
-    pass
+class RudpPort:
 
-class RudpTimeout(Exception):
-    pass
+    @property
+    def socket(self):
+        return self.parent.socket
 
-class RudpFailedToConnect(Exception):
-    pass
 
-class RUDP:
+    def __init__(self, port:int, peerport:int, parent:'RudpConnection') -> 'RudpPort':
+        self.port:int = port
+        self.peerPort:int = peerport
+        self.parent:'RudpConnection' = parent
+        self.queue:list[RudpMessage] = []
+        self.lastId:int = 0
+
+
+    def Send(self, msg:str, system:bool=False) -> None:
+        self.parent.Send(self, msg, system)
+
+
+    def Receive(self) -> RudpMessage:
+        """Wait for message from connected socket, return it and send an ACK."""
+
+        incoming = False
+        # Check queue
+        if len(self.queue) > 0:
+            incoming = self.queue.pop(0)
+
+        else:
+            attempts = 0
+            while attempts < self.parent.MAX_ATTEMPTS:
+                try:
+                    msg, (ip, addr) = self.socket.recvfrom(BUFF_SIZE)
+                    if (ip, addr) != self.parent.peer:
+                        # This is a stranger, ignore them
+                        continue
+
+                    incoming = RudpMessage.Decode(msg)
+
+                    if (not incoming.system) or (incoming.string != "ACK"):
+                        # The only time we're not going to send ACK is when the message we receive
+                        # it IS a system message AND the message itself is ACK
+                        self.parent._SendAck(incoming)
+
+                    if incoming.destPort != self.port:
+                        # Add to other port's queue
+                        self.parent.ports[incoming.destPort].queue.append(incoming)
+
+                    if not incoming.system:
+                        break
+
+                except TimeoutError:
+                    attempts += 1
+
+            if attempts == self.parent.MAX_ATTEMPTS:
+                raise RudpTimeout()
+
+        assert(incoming)
+        return incoming
+    
+
+class RudpConnection:
     """Reliable UDP port"""
 
     MAX_ATTEMPTS = 5
 
-    def _sendto(self, data, dest):
-        """Passthrough to socket's sendto()."""
-        print(f"sending {data} to {dest}")
-        self.socket.sendto(data, dest)
-
-    def __init__(self, timeout:int=0, port:int=0, socket=None) -> 'RUDP':
-        self.state  : State           = State.CLOSED
+    def __init__(self, timeout:int=0, port:int=0, socket=None) -> 'RudpConnection':
         self.socket : socket.socket   = CreateSocket(timeout=timeout, port=port) if socket == None else socket
         self.peer   : tuple[str, int] = None # IP-Port pair
-        self.lastId : int             = -1
-        # TODO: Change to dict of lists
-        self.recvQueue : list[RudpMessage] = []
+        self.ports  : dict[int, RudpPort] = {0: RudpPort(0, 0, self)}
+
+
+    def _sendto(self, data, dest):
+        """Passthrough to socket's sendto()."""
+        self.socket.sendto(data, dest)
+
+
+    def Send(self, port:RudpPort, msg:str, system:bool=False) -> None:
+        """Sends a given string to the connected RUDP socket."""
+        
+        message = RudpMessage(port.port, port.peerPort, system, port.lastId, msg)
+
+        self._sendto(message.Encode(), self.peer)
+        self._WaitForAck(port.lastId, port)
+        port.lastId += 1
 
 
     def _recvfrom(self) -> tuple[bytes, str, int]:
@@ -69,65 +129,56 @@ class RUDP:
         msg, (ip, addr) = self.socket.recvfrom(BUFF_SIZE)
         return msg, ip, addr
 
-    # def _frsh(self):
-    #     self.socket.sendto("FRSH".encode(), ('highlyderivative.games', 4800))
-    #     print("sent frsh")
-    #     msg, (ip, addr) = self.socket.recvfrom(BUFF_SIZE)
-    #     print(msg)
-
-
-    def Send(self, msg:str, system:bool=False) -> None:
-        """Sends a given string to the connected RUDP socket."""
-        if self.state != State.CONNECTED:
-            raise RudpInvalidState("Can only send while connected!")
-
-        self.lastId += 1
-        message = RudpMessage(self.lastId, system, msg)
-
-        self._sendto(message.Encode(), self.peer)
-        self._WaitForAck(id)
-
 
     def _SendAck(self, incoming:RudpMessage) -> None:
         """Send an acknowledgement message in response to given incoming."""
-        ack = RudpMessage(incoming.id, True, "ACK").Encode()
+        ack = RudpMessage(incoming.destPort, incoming.srcPort, True, incoming.id, "ACK").Encode()
         self._sendto(ack, self.peer)
 
 
     # TODO: This being completely from Receive() bugs me. There's a good bit of
     # Code shared. Merge? Factor out common?
-    def _WaitForAck(self, id:int) -> None:
+    def _WaitForAck(self, expectedId:int, virtualPort:RudpPort) -> None:
         """Wait for acknowledgement, in the mean time queueing other received messages. Throw error upon timeout."""
+
         attempts = 0
         while attempts < self.MAX_ATTEMPTS:
             try:
                 msg, addr = self.socket.recvfrom(BUFF_SIZE)
                 if addr != self.peer:
-                    print("Skipping unknown address", addr, "VS", self.peer)
                     continue
 
                 incoming = RudpMessage.Decode(msg)
 
-                match [incoming.system, incoming.data, incoming.id]:
-                    case [True, "ACK", id]:
-                        self.state = State.CONNECTED
+                match [incoming.destPort, incoming.system, incoming.id, incoming.string]:
+                    case [virtualPort.port, True, expectedId, "ACK"]:
+                        # This is what we were waiting for; leave.
                         return
 
-                    case [True, "HAND1", _]:
+                    case [0, True, _, "HAND1"]:
                         self._SendAck(incoming)
 
-                        pass
-
-                    case [True, "HAND2", _]:
+                    case [0, True, _, "HAND2"]:
                         self._SendAck(incoming)
-                        pass
+                        
+                    case [virtualPort.port, True, _, _]:
+                        # If this IS intended for us, and IS a system message,
+                        # but we don't have a specific answer, then panic
+                        raise NotImplementedError(incoming.string)
 
-                    case [False, _, _]:
-                        self.recvQueue.append(incoming)
+                    case [vport, False, _, _]:
+                        # If this is for anyone else and is NOT a system message,
+                        # add it to their queue and send an ACK
+                        self.ports[vport].queue.append(incoming)
                         self._SendAck(incoming)
 
+                    case [vport, True, _, _]:
+                        # if this is for anyone else and IS a system emssage,
+                        # add it to their queue and that's it
+                        self.ports[incoming.destPort].queue.append(incoming)
 
                     case _:
+                        # What?
                         raise NotImplementedError()
 
             except TimeoutError:
@@ -135,44 +186,6 @@ class RUDP:
 
         if attempts == self.MAX_ATTEMPTS:
             raise RudpTimeout()
-
-
-    def Receive(self) -> RudpMessage:
-        """Wait for message from connected socket, return it and send an ACK."""
-        if self.state != State.CONNECTED: #and self.state != State.SENDING:
-            raise RudpInvalidState("Can only recieve while connected or waiting for send-ack!")
-
-        incoming = False
-        # Check queue
-        if len(self.recvQueue) > 0:
-            incoming = self.recvQueue.pop(0)
-
-        else:
-            attempts = 0
-            while attempts < self.MAX_ATTEMPTS:
-                try:
-                    msg, (ip, addr) = self.socket.recvfrom(BUFF_SIZE)
-                    if (ip, addr) != self.peer:
-                        print("Skipping unknown address", ip, addr, "VS", self.peer)
-                        continue
-
-                    incoming = RudpMessage.Decode(msg)
-                    if incoming.system:
-
-                        continue
-
-                    else:
-                        #self._SendAck(incoming)
-                        break
-
-                except TimeoutError:
-                    attempts += 1
-
-            if attempts == self.MAX_ATTEMPTS:
-                raise RudpTimeout()
-
-        assert(incoming)
-        return incoming
 
 
     def _TryConnect(self, mainIp:str, tentativePort:int, altIp:str, altPort:int):
@@ -189,7 +202,8 @@ class RUDP:
         while attempts < self.MAX_ATTEMPTS:
             try:
                 # Try to contact peer on internet
-                outgoing = RudpMessage(-2, True, f'HAND1').Encode()
+                #          port, peerPort, system, id, msg
+                outgoing = RudpMessage(0, 0, True, 0, f'HAND1').Encode()
                 print("sending", outgoing, (mainIp, port))
                 sock.sendto(outgoing, (mainIp, port))
 
@@ -205,13 +219,12 @@ class RUDP:
 
                 # Listen for message from peer
                 msg, (ip, p) = sock.recvfrom(BUFF_SIZE)
-                msg = RudpMessage.Decode(msg).data.split(" ")
+                msg = RudpMessage.Decode(msg).string.split(" ")
                 print("received", msg)
 
                 match msg:
                     # Peer has made contact with us
                     case ["HAND1"]:
-                        print("case1")
                         if ip == mainIp:
                             actual = mainIp
 
@@ -224,17 +237,16 @@ class RUDP:
                             continue
 
                         port = p
-                        outgoing = RudpMessage(-1, True, "HAND2").Encode()
+                        outgoing = RudpMessage(0, 0, True, 1, "HAND2").Encode()
                         print("sending hand2", outgoing)
                         sock.sendto(outgoing, (actual, port))
 
                     # Peer heard our IAM and is responding!
                     case ["HAND2"]:
-                        print("case2")
                         # Send one final YOUARE back to them
                         port = p
                         actual = ip
-                        outgoing = RudpMessage(-1, True, "HAND2").Encode()
+                        outgoing = RudpMessage(0,0, True, 1, "HAND2").Encode()
                         sock.sendto(outgoing, (actual, port))
                         break
 
@@ -257,38 +269,21 @@ class RUDP:
             print("Failed to connect")
             raise RudpFailedToConnect()
 
-        self.state = State.CONNECTED
         self.peer = actual, port
 
 
-    def Connect(self, ip:str, altIp:str, initialPort:int, altPort:int):
-        """Connect to peer RUDP port."""
-        ip = str(ip); altIp = str(altIp); initialPort = int(initialPort); altPort = int(altPort)
+    def Connect(self, ip:str, altIp:str, initialPort:int, altPort:int) -> None:
+        """Connect to peer RUDP."""
+        self._TryConnect(ip, initialPort, altIp, altPort)
 
 
-        match self.state:
-            case State.CLOSED:
-                try:
-                    self._TryConnect(ip, initialPort, altIp, altPort)
-                except Exception as e:
-                    raise e
+    def Virtual(self, port:int, peerPort:int) -> 'RudpPort':
+        """Create a virtual RUDP port on this connection and return it."""
+        if port in self.ports:
+            raise KeyError("Duplicate port number")
 
-            case _:
-                raise RudpInvalidState("Can only connect from a closed state!")
-
-
-    def Disconnect(self) -> None:
-        self.state = State.CLOSED
-        self.Send("DISCONNECT", True)
-
-    def Regress(self) -> socket.socket:
-        """Disable usage as RELIABLE UDP, but return regular UDP socket"""
-        self.state = State.REGRESSED
-        self.Send("REGRESS", True)
-        return self.socket
-
-    def Virtual(label:str):
-        pass
+        p = self.ports[port] = RudpPort(port, peerPort, self)
+        return p
 
 ################################################################################
 ################################################################################

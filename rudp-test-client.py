@@ -12,7 +12,7 @@ import curses
 from sys import argv
 from socket_convenience import *
 from rudp_chatroom import Chatroom
-from rudp import RUDP
+from rudp import RudpPort, RudpConnection
 
 # Holepunch server address and port
 SERVER_ADDR = ("highlyderivative.games", 4800)
@@ -21,11 +21,11 @@ USER = "poseidon"
 
 
 if argv[1] == "host":
-    sock = CreateSocket(20)
+    sock = CreateSocket(.5)
+    #We need to get a port assigned to us, so... this works.
     utf8send(sock, "FRSH", SERVER_ADDR)
     ourport = GetSocketPort(sock)
 
-    print(93)
     # Request a spot in the holepunch server
     utf8send(sock, f"HOST {GetLocalIp()} {USER} {ourport}", SERVER_ADDR)
     msg, _a, _p = utf8get(sock, True)
@@ -45,13 +45,16 @@ if argv[1] == "host":
                     print(f"{ourport=}")
 
                     # Start demo chatroom
-                    sock = RUDP(socket=sock)
+                    conn = RudpConnection(socket=sock)
 
-                    sock.Connect(clientaddr, clientlocal, clientport, clientlocalport, "sendSock")
-                    sock.Virtual("recvSock")
+                    if argv[2] == "local":
+                        conn.Connect('127.0.0.1', None, int(clientport), int(clientlocalport))
+                    else:
+                        conn.Connect(clientaddr, clientlocal, int(clientport), int(clientlocalport))
+                    sendsock = conn.Virtual(1, 2)
+                    recvsock = conn.Virtual(2, 1)
 
-                    # Start demo chatroom
-                    cr = Chatroom(sock)
+                    cr = Chatroom(sendsock, recvsock, "Alice")
                     curses.wrapper(cr.main)
 
                 # Refreshed connection to server
@@ -68,27 +71,32 @@ if argv[1] == "host":
 
 
 elif argv[1] == "connect":
-    sock = CreateSocket(20)
+    sock = CreateSocket(.5)
     utf8send(sock, "FRSH", SERVER_ADDR)
     ourport = GetSocketPort(sock)
 
-    print(149)
     # Send message to holepunch server
     utf8send(sock, f"CONN {GetLocalIp()} {USER} {ourport}", SERVER_ADDR)
 
     # Listen for response
-    msg, addr, port = utf8get(sock, True)
-    match msg:
-        # Recieved message with our peer's info
-        case ["CONNTO", hostaddr, hostlocal, hostport, hostlocalport]:
-            sock = RUDP(socket=sock)
+    while True:
+        msg, addr, port = utf8get(sock, True)
+        match msg:
+            # Recieved message with our peer's info
+            case ["CONNTO", hostaddr, hostlocal, hostport, hostlocalport]:
 
-            # Start demo chatroom
-            sock.Connect(hostaddr, hostlocal, hostport, hostlocalport, "sendSock")
-            sock.Virtual("recvSock")
+                # Start demo chatroom
+                conn = RudpConnection(socket=sock)
+                sendsock = conn.Virtual(1, 2)
+                recvsock = conn.Virtual(2, 1)
+                if argv[2] == "local":
+                    conn.Connect('127.0.0.1', None, int(hostport), int(hostlocalport))
+                else:
+                    conn.Connect(hostaddr, hostlocal, int(hostport), int(hostlocalport))
 
-            cr = Chatroom(sock)
-            curses.wrapper(cr.main)
+                cr = Chatroom(sendsock, recvsock, "Bob")
+                curses.wrapper(cr.main)
+                break
 
-        case _:
-            print("Invalid message", msg)
+            case _:
+                print("Invalid message", msg)

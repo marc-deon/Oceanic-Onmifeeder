@@ -7,7 +7,7 @@ import time
 import curses
 import threading
 import os
-from rudp import RUDP, RudpMessage, RudpTimeout
+from rudp import RudpPort, RudpTimeout
 
 
 @dataclass
@@ -17,7 +17,8 @@ class Message:
     time:datetime
     text:str
 
-    def FromString(msg:str):
+    def FromString(msg:str) -> 'Message':
+        t = type(msg)
         msg = base64.b64decode(msg).decode('utf8')
         msg = json.loads(msg)
         return Message(msg["system"],msg["user"], msg["time"], msg["text"])
@@ -25,33 +26,33 @@ class Message:
 
 class Chatroom:
 
-    def __init__(self, send_socket:RUDP, recieve_socket:RUDP):
+    def __init__(self, send_socket:RudpPort, recieve_socket:RudpPort, username=""):
         self.send_socket = send_socket
         self.recieve_socket = recieve_socket
 
-        self.localUser = ""
+        self.localUser = username
         while self.localUser == "":
             self.localUser = input("Enter your name: ").strip()
 
         self.log = [Message(False, "System", time.gmtime(), f"Welcome to the chat, {self.localUser}!")]
 
+
     def Listen(self) -> None:
         while True:
             try:
-                message = self.recieve_socket.Receive()
+                # Strip leading b' and trailing '
+                # Shenanigans from double encoding as bytes
+                message = Message.FromString(self.recieve_socket.Receive().data[2:-1])
                 
                 if message.system:
-                    if message.string == "DISCONNECT":
+                    if message.text == "DISCONNECT":
                         # exit(0)
-                        os._exit()
+                        os._exit(0)
                         
                 self.log.append(message)
 
             except RudpTimeout:
                 pass
-
-            # except:
-            #     pass
 
 
     def Send(self, message:str, system:bool=False) -> None:
@@ -59,7 +60,7 @@ class Chatroom:
         self.log.append(Message(False, self.localUser, time.gmtime(), message))
         # Create a json copy of the message, encoded in utf8, base64
         msg = json.dumps({"system":system, "user": self.localUser, "text":message, "time": time.gmtime()})
-        msg = base64.b64encode(msg.encode('utf8'))
+        msg = str(base64.b64encode(msg.encode('utf8')))
         # Send it
         self.send_socket.Send(msg)
 
@@ -116,7 +117,6 @@ class Chatroom:
 
                     case _:
                         currentMessage += k
-
 
             except curses.error:
                 pass
