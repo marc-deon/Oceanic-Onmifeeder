@@ -7,12 +7,11 @@
 #
 ################################################################################
 
-# import socket
 import curses
 from sys import argv
 from socket_convenience import *
 from rudp_chatroom import Chatroom
-from rudp import RudpPort, RudpConnection
+from rudp import RudpConnection
 
 # Holepunch server address and port
 SERVER_ADDR = ("highlyderivative.games", 4800)

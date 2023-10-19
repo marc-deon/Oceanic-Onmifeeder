@@ -9,7 +9,6 @@ import threading
 import os
 from rudp import RudpPort, RudpTimeout
 
-
 @dataclass
 class Message:
     system:bool
