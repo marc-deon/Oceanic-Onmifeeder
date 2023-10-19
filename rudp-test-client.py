@@ -47,7 +47,7 @@ if argv[1] == "host":
                     # Start demo chatroom
                     conn = RudpConnection(socket=sock)
 
-                    if argv[2] == "local":
+                    if argv[-1] == "local":
                         conn.Connect('127.0.0.1', None, int(clientport), int(clientlocalport))
                     else:
                         conn.Connect(clientaddr, clientlocal, int(clientport), int(clientlocalport))
@@ -89,7 +89,7 @@ elif argv[1] == "connect":
                 conn = RudpConnection(socket=sock)
                 sendsock = conn.Virtual(1, 2)
                 recvsock = conn.Virtual(2, 1)
-                if argv[2] == "local":
+                if argv[-1] == "local":
                     conn.Connect('127.0.0.1', None, int(hostport), int(hostlocalport))
                 else:
                     conn.Connect(hostaddr, hostlocal, int(hostport), int(hostlocalport))
