@@ -24,7 +24,7 @@ class RudpMessage:
         x = json.loads(msg.decode())
         m = RudpMessage(**x)
         # Since json doesn't support bytes, the data will come in as a string
-        m.data = bytes(m.data, 'utf8')
+        m.data = m.data.encode()
         return m
 
     @property
