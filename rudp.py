@@ -16,6 +16,9 @@
 #
 # The main way that this should be used is:
 #
+#   localPort = 1
+#   remotePort = 1
+#   
 #   conn = RudpConnection(...)
 #   conn.Connect(...)
 #   port = conn.Virtual(localPort, remotePort)
