@@ -123,14 +123,16 @@ elif argv[1] == "connect":
     utf8send(sock, f"CONN {GetLocalIp()} {USER}", SERVER_ADDR)
 
     # Listen for response
-    msg, addr, port = utf8get(sock, True)
-    match msg:
-        # Recieved message with our peer's info
-        case ["CONNTO", ourpublic, local, public, port]:
-            ip, port = PeerHandshake(sock, ourpublic, public, local, port)
-            # Start demo chatroom
-            cr = Chatroom(sock, ip, port)
-            curses.wrapper(cr.main)
-            
-        case _:
-            print("Invalid message", msg)
+    while True:
+        msg, addr, port = utf8get(sock, True)
+        match msg:
+            # Recieved message with our peer's info
+            case ["CONNTO", ourpublic, local, public, port]:
+                ip, port = PeerHandshake(sock, ourpublic, public, local, port)
+                # Start demo chatroom
+                cr = Chatroom(sock, ip, port)
+                curses.wrapper(cr.main)
+                break
+
+            case _:
+                print("Invalid message", msg)
