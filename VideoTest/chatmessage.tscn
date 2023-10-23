@@ -1,0 +1,40 @@
+[gd_scene load_steps=2 format=3 uid="uid://clfnuvysh7o8p"]
+
+[ext_resource type="Script" path="res://chatmessage.gd" id="1_tr6kj"]
+
+[node name="Message" type="HBoxContainer"]
+custom_minimum_size = Vector2(0, 30)
+size_flags_horizontal = 3
+script = ExtResource("1_tr6kj")
+
+[node name="vbox" type="VBoxContainer" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="hbox" type="HBoxContainer" parent="vbox"]
+layout_mode = 2
+
+[node name="Time" type="RichTextLabel" parent="vbox/hbox"]
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_colors/default_color = Color(0.705882, 0.705882, 0.705882, 1)
+theme_override_font_sizes/normal_font_size = 12
+theme_override_font_sizes/italics_font_size = 12
+bbcode_enabled = true
+text = "00:00"
+fit_content = true
+autowrap_mode = 0
+
+[node name="User" type="RichTextLabel" parent="vbox/hbox"]
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_colors/default_color = Color(0.721569, 0.721569, 0.721569, 1)
+text = "Placeholder name"
+fit_content = true
+autowrap_mode = 0
+
+[node name="Message" type="RichTextLabel" parent="vbox/hbox"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "The henley Passport Index (abbreviation: HPI) is a gloab ranking of countries according to the travel freedom allowed by those countries' ordinary passports for their citizens."
+fit_content = true
