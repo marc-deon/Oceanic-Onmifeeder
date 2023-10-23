@@ -58,7 +58,7 @@ class RudpConnection:
         self.socket.sendto(data, dest)
 
 
-    def _Send(self, port:RudpPort, msg:str, system:bool) -> None:
+    def _Send(self, port:RudpPort, msg:bytes, system:bool) -> None:
         """Sends a given string to the connected RUDP socket."""
         
         message = RudpMessage(port.port, port.peerPort, system, port.lastId, msg)
@@ -69,7 +69,7 @@ class RudpConnection:
         port.lastId += 1
 
 
-    def _Receive(self, port) -> RudpMessage:
+    def _Receive(self, port:RudpPort) -> RudpMessage:
             incoming = False
             # Check queue
             if len(port.queue) > 0:
@@ -85,19 +85,44 @@ class RudpConnection:
                             continue
 
                         incoming = RudpMessage.Decode(msg)
+                        match [incoming.destPort, incoming.system, incoming.id, incoming.string]:
+                            case [port.port, True, expectedId, "ACK1"]:
+                                # Almost there...
+                                self._SendAck(incoming)
+                            
+                            case [port.port, True, expectedId, "ACK2"]:
+                                # This is what we were waiting for; leave.
+                                pass # break?
 
-                        if not port.stream:
-                            if (not incoming.system) or (incoming.string != "ACK"):
-                                # The only time we're not going to send ACK is when the message we receive
-                                # it IS a system message AND the message itself is ACK
+                            case [0, True, _, "HAND1"]:
                                 self._SendAck(incoming)
 
-                        if incoming.destPort != port.port:
-                            # Add to other port's queue
-                            self.ports[incoming.destPort].queue.append(incoming)
+                            case [0, True, _, "HAND2"]:
+                                self._SendAck(incoming)
+                                
+                                
+                            case [port.port, False, expectedId, _]:
+                                break
 
-                        if not incoming.system:
-                            break
+                            case [port.port, True, _, _]:
+                                # If this IS intended for us, and IS a system message,
+                                # but we don't have a specific answer, then panic
+                                raise NotImplementedError(incoming.string)
+
+                            case [vport, False, _, _]:
+                                # If this is for anyone else and is NOT a system message,
+                                # add it to their queue and send an ACK
+                                self.ports[vport].queue.append(incoming)
+                                self._SendAck(incoming)
+
+                            case [vport, True, _, _]:
+                                # if this is for anyone else and IS a system emssage,
+                                # add it to their queue and that's it
+                                self.ports[incoming.destPort].queue.append(incoming)
+
+                            case _:
+                                # What?
+                                raise NotImplementedError()
 
                     except TimeoutError:
                         attempts += 1
@@ -116,60 +141,20 @@ class RudpConnection:
 
     def _SendAck(self, incoming:RudpMessage) -> None:
         """Send an acknowledgement message in response to given incoming."""
-        ack = RudpMessage(incoming.destPort, incoming.srcPort, True, incoming.id, "ACK").Encode()
+        if self.ports[incoming.destPort].stream:
+            return
+        num = "ACK2" if incoming.string == "ACK1" else "ACK1"
+        ack = RudpMessage(incoming.destPort, incoming.srcPort, True, incoming.id, num).Encode()
         self._sendto(ack, self.peer)
 
 
-    # TODO: This being completely from Receive() bugs me. There's a good bit of
-    # Code shared. Merge? Factor out common?
     def _WaitForAck(self, expectedId:int, virtualPort:RudpPort) -> None:
         """Wait for acknowledgement, in the mean time queueing other received messages. Throw error upon timeout."""
 
-        attempts = 0
-        while attempts < self.MAX_ATTEMPTS:
-            try:
-                msg, addr = self.socket.recvfrom(BUFF_SIZE)
-                if addr != self.peer:
-                    continue
-
-                incoming = RudpMessage.Decode(msg)
-
-                match [incoming.destPort, incoming.system, incoming.id, incoming.string]:
-                    case [virtualPort.port, True, expectedId, "ACK"]:
-                        # This is what we were waiting for; leave.
-                        return
-
-                    case [0, True, _, "HAND1"]:
-                        self._SendAck(incoming)
-
-                    case [0, True, _, "HAND2"]:
-                        self._SendAck(incoming)
-                        
-                    case [virtualPort.port, True, _, _]:
-                        # If this IS intended for us, and IS a system message,
-                        # but we don't have a specific answer, then panic
-                        raise NotImplementedError(incoming.string)
-
-                    case [vport, False, _, _]:
-                        # If this is for anyone else and is NOT a system message,
-                        # add it to their queue and send an ACK
-                        self.ports[vport].queue.append(incoming)
-                        self._SendAck(incoming)
-
-                    case [vport, True, _, _]:
-                        # if this is for anyone else and IS a system emssage,
-                        # add it to their queue and that's it
-                        self.ports[incoming.destPort].queue.append(incoming)
-
-                    case _:
-                        # What?
-                        raise NotImplementedError()
-
-            except TimeoutError:
-                attempts += 1
-
-        if attempts == self.MAX_ATTEMPTS:
-            raise RudpTimeout()
+        while True:
+            msg = self._Receive(virtualPort)
+            if ((msg.destPort == virtualPort.port) and (msg.system) and (msg.id == expectedId) and (msg.string == "ACK2")):
+                break
 
 
     def _TryConnect(self, mainIp:str, tentativePort:int, altIp:str, altPort:int) -> None:
@@ -261,10 +246,10 @@ class RudpConnection:
         self._TryConnect(ip, initialPort, altIp, altPort)
 
 
-    def Virtual(self, port:int, peerPort:int) -> RudpPort:
+    def Virtual(self, port:int, peerPort:int, stream=False) -> RudpPort:
         """Create a virtual RUDP port on this connection and return it."""
         if port in self.ports:
             raise KeyError("Duplicate port number")
 
-        p = self.ports[port] = RudpPort(port, peerPort, self)
+        p = self.ports[port] = RudpPort(port, peerPort, self, stream)
         return p
