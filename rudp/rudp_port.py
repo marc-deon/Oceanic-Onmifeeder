@@ -37,8 +37,8 @@ class RudpPort:
             attempts = 0
             while attempts < self.parent.MAX_ATTEMPTS:
                 try:
-                    msg, (ip, addr) = self.socket.recvfrom(BUFF_SIZE)
-                    if (ip, addr) != self.parent.peer:
+                    msg, (ip, port) = self.socket.recvfrom(BUFF_SIZE)
+                    if (ip, port) != self.parent.peer:
                         # This is a stranger, ignore them
                         continue
 
