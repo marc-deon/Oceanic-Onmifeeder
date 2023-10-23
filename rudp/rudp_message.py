@@ -14,7 +14,14 @@ class RudpMessage:
     def Encode(self) -> bytes:
         """Message -> dict -> json"""
         # return base64.b64encode(json.dumps(dataclasses.asdict(self)).encode())
-        return json.dumps(dataclasses.asdict(self)).encode()
+        d = dataclasses.asdict(self)
+        # TODO: 
+        if isinstance(d['data'], bytes):
+            d['data'] = d['data'].hex()
+            pass
+        #     d['data'] = str(d['data'])[2:-1]
+        
+        return json.dumps(d).encode()
 
     # TODO: Add base64 back in
     @classmethod

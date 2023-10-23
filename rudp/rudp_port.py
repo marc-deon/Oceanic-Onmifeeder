@@ -22,8 +22,10 @@ class RudpPort:
         self.stream:bool = stream
 
 
-    def Send(self, msg:str) -> None:
+    def Send(self, msg:str|bytes) -> None:
         """Send a message optionally marked as a system message."""
+        if isinstance(msg,str):
+            msg = msg.encode()
         self.parent._Send(self, msg, system=False)
 
 
