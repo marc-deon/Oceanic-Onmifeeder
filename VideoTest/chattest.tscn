@@ -1,0 +1,46 @@
+[gd_scene load_steps=3 format=3 uid="uid://ollkeok0042r"]
+
+[ext_resource type="Script" path="res://rudp_test_client.gd" id="1_tedfr"]
+[ext_resource type="FontFile" uid="uid://bvjh1mewm6bid" path="res://NotoColorEmoji.ttf" id="2_v0u55"]
+
+[node name="rudpTestClient" type="MarginContainer"]
+offset_right = 1152.0
+offset_bottom = 648.0
+script = ExtResource("1_tedfr")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
+layout_mode = 2
+alignment = 1
+
+[node name="Control" type="Control" parent="HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HostButton" type="Button" parent="HBoxContainer"]
+custom_minimum_size = Vector2(0, 227)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+theme_override_fonts/font = ExtResource("2_v0u55")
+theme_override_font_sizes/font_size = 200
+text = "👓"
+
+[node name="Control2" type="Control" parent="HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ConnectButton" type="Button" parent="HBoxContainer"]
+custom_minimum_size = Vector2(0, 227)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+theme_override_fonts/font = ExtResource("2_v0u55")
+theme_override_font_sizes/font_size = 200
+text = "🍌"
+
+[node name="Control3" type="Control" parent="HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[connection signal="pressed" from="HBoxContainer/HostButton" to="." method="_on_host_button_pressed"]
+[connection signal="pressed" from="HBoxContainer/ConnectButton" to="." method="_on_connect_button_pressed"]
