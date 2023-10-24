@@ -41,8 +41,9 @@ class Chatroom:
             try:
                 # Strip leading b' and trailing '
                 # Shenanigans from double encoding as bytes
-                message = Message.FromString(self.recieve_socket.Receive().data[2:-1])
+                message = Message.FromString(self.recieve_socket.Receive().data)
                 
+
                 if message.system:
                     if message.text == "DISCONNECT":
                         # exit(0)
@@ -59,7 +60,7 @@ class Chatroom:
         self.log.append(Message(False, self.localUser, time.gmtime(), message))
         # Create a json copy of the message, encoded in utf8, base64
         msg = json.dumps({"system":system, "user": self.localUser, "text":message, "time": time.gmtime()})
-        msg = str(base64.b64encode(msg.encode('utf8')))
+        msg = base64.b64encode(msg.encode())
         # Send it
         self.send_socket.Send(msg)
 

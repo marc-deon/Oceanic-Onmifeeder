@@ -36,5 +36,8 @@ class RudpPort:
 
     def Receive(self) -> RudpMessage:
         """Wait for message, return it and send an ACK. Also queue message for other ports in the mean time."""
-        return self.parent._Receive(self)
+        m = self.parent._Receive(self)
+        while m.system:
+            m = self.parent._Receive(self)
+        return m
         

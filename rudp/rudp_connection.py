@@ -71,12 +71,16 @@ class RudpConnection:
 
     def _Receive(self, port:RudpPort) -> RudpMessage:
             incoming = False
+            expectedId = port.lastId
+
             # Check queue
             if len(port.queue) > 0:
                 incoming = port.queue.pop(0)
 
             else:
                 attempts = 0
+                waitingFor2 = False
+
                 while attempts < self.MAX_ATTEMPTS:
                     try:
                         msg, (ip, addr) = self.socket.recvfrom(BUFF_SIZE)
@@ -86,23 +90,30 @@ class RudpConnection:
 
                         incoming = RudpMessage.Decode(msg)
                         match [incoming.destPort, incoming.system, incoming.id, incoming.string]:
-                            case [port.port, True, expectedId, "ACK1"]:
-                                # Almost there...
+
+                            case [port.port, False, expectedId, _]:
+                                # Receiver: This is our expected message
+                                # Send ACK1, await ACK2
                                 self._SendAck(incoming)
+                                waitingFor2 = True
+                                break
+                            
+                            case [port.port, True, expectedId, "ACK1"]:
+                                # Sender: Almost there...
+                                # Send Ack2, we're done here
+                                self._SendAck(incoming)
+                                break
                             
                             case [port.port, True, expectedId, "ACK2"]:
-                                # This is what we were waiting for; leave.
-                                pass # break?
+                                # Receiver: This is what we were waiting for; leave.
+                                # self._SendAck(incoming)
+                                break
 
                             case [0, True, _, "HAND1"]:
                                 self._SendAck(incoming)
 
                             case [0, True, _, "HAND2"]:
                                 self._SendAck(incoming)
-                                
-                                
-                            case [port.port, False, expectedId, _]:
-                                break
 
                             case [port.port, True, _, _]:
                                 # If this IS intended for us, and IS a system message,
@@ -125,6 +136,9 @@ class RudpConnection:
                                 raise NotImplementedError()
 
                     except TimeoutError:
+                        if waitingFor2:
+                            # print("Resending ack for", incoming.string)
+                            self._SendAck(incoming)
                         attempts += 1
 
                 if attempts == self.MAX_ATTEMPTS:
@@ -155,6 +169,9 @@ class RudpConnection:
             msg = self._Receive(virtualPort)
             if ((msg.destPort == virtualPort.port) and (msg.system) and (msg.id == expectedId) and (msg.string == "ACK2")):
                 break
+            else:
+                # print("while waiting received", msg.string)
+                pass
 
 
     def _TryConnect(self, mainIp:str, tentativePort:int, altIp:str, altPort:int) -> None:
@@ -173,7 +190,7 @@ class RudpConnection:
                 # Try to contact peer on internet
                 #          port, peerPort, system, id, msg
                 outgoing = RudpMessage(0, 0, True, 0, f'HAND1').Encode()
-                print("sending", outgoing, (mainIp, port))
+                # print("sending", outgoing, (mainIp, port))
                 sock.sendto(outgoing, (mainIp, port))
 
                 if altIp:
@@ -189,7 +206,6 @@ class RudpConnection:
                 # Listen for message from peer
                 msg, (ip, p) = sock.recvfrom(BUFF_SIZE)
                 msg = RudpMessage.Decode(msg).string.split(" ")
-                print("received", msg)
 
                 match msg:
                     # Peer has made contact with us
@@ -207,7 +223,6 @@ class RudpConnection:
 
                         port = p
                         outgoing = RudpMessage(0, 0, True, 1, "HAND2").Encode()
-                        print("sending hand2", outgoing)
                         sock.sendto(outgoing, (actual, port))
 
                     # Peer heard our IAM and is responding!

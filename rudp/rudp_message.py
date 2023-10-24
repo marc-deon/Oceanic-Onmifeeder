@@ -10,28 +10,29 @@ class RudpMessage:
     id:int
     data:bytes
 
+    def __post_init__(self):
+        if isinstance(self.data, str):
+            self.data = self.data.encode()
+            # raise Exception(self.data)
+
     # TODO: Add base64 back in
     def Encode(self) -> bytes:
         """Message -> dict -> json"""
-        # return base64.b64encode(json.dumps(dataclasses.asdict(self)).encode())
         d = dataclasses.asdict(self)
-        # TODO: 
-        if isinstance(d['data'], bytes):
-            d['data'] = d['data'].hex()
-            pass
-        #     d['data'] = str(d['data'])[2:-1]
-        
+        # Json doesn't support bytes, so we need to convert data to a string, and then
+        # dump the whole thing into a json string, and then get the bytes from that
+        d['data'] = self.string
         return json.dumps(d).encode()
 
     # TODO: Add base64 back in
     @classmethod
     def Decode(self, msg:bytes) -> 'RudpMessage':
         """Message <- dict <- json"""
-        # return RudpSegment(**json.loads(base64.b64decode(msg)))
+        assert isinstance(msg, bytes), "message must be bytes"
+
         x = json.loads(msg.decode())
         m = RudpMessage(**x)
-        # Since json doesn't support bytes, the data will come in as a string
-        m.data = m.data.encode()
+        # m.data = bytes.fromhex(m.data) #m.data.decode()
         return m
 
     @property

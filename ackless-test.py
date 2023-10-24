@@ -8,7 +8,7 @@ from time import sleep
 
 def serve_video(sock:rudp.RudpPort):
     vid = cv2.VideoCapture("take_it_yeesy.mp4") # replace 'rocket.mp4' with 0 for webcam
-    WIDTH = 400
+    WIDTH = 300
 
     while True:
         while True:
@@ -25,10 +25,12 @@ def serve_video(sock:rudp.RudpPort):
             frame = imutils.resize(frame,width=WIDTH)
 
             # Encode as jpeg
-            encoded, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
-            print(bytes(buffer))
+            buffer = cv2.imencode('.jpeg', frame, [cv2.IMWRITE_JPEG_QUALITY, 90])[1]
             # Send to application
-            sock.Send(bytes(buffer))
+            b = buffer.tobytes()
+            # b = b'HELLO WORLD'
+            print(b[:10])
+            sock.Send(b)
 
         # Loop the placeholder video file
         vid = cv2.VideoCapture("take_it_yeesy.mp4")
@@ -37,11 +39,14 @@ def receive_video(sock:rudp.RudpPort):
     import numpy
     while True:
         msg = sock.Receive()
-        print("received msg with data", msg.data)
-        # numpy.frombuffer()
-        frame = numpy.array(msg.data, dtype='S1')
-        cv2.imdecode(frame, cv2.IMREAD_UNCHANGED)
-        cv2.imshow()
+        frame = numpy.frombuffer(bytes.fromhex(msg.string), dtype='byte')
+        frame = cv2.imdecode(frame, cv2.IMREAD_COLOR)
+
+        print("frame", frame)
+        cv2.imshow('frame', frame)
+        # 30fps...ish
+        if cv2.waitKey(1) & 0xFF == 'q':
+            break
     pass
 
 
