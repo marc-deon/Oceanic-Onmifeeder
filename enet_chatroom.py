@@ -5,9 +5,9 @@ import json
 import base64
 import time
 import curses
-import threading
 import os
-
+import enet
+# https://github.com/aresch/pyenet
 
 @dataclass
 class Message:
@@ -16,42 +16,48 @@ class Message:
     time:datetime
     text:str
 
-    def FromString(msg:str):
-        msg = base64.b64decode(msg).decode('utf8')
-        msg = json.loads(msg)
+    def FromBytes(msg:bytes) -> 'Message':
+        msg = json.loads(msg.decode())
         return Message(msg["system"],msg["user"], msg["time"], msg["text"])
-
 
 class Chatroom:
 
-    def __init__(self, s:socket.socket, ip:str, port:int):
-        self.sock = s
-        self.ip = ip
-        self.port = port
+    def __init__(self, host:enet.Host, peer:enet.Peer, channel:int, username=""):
+        self.host = host
+        self.peer = peer
+        self.channel = channel
 
-        self.localUser = ""
+        self.localUser = username
         while self.localUser == "":
             self.localUser = input("Enter your name: ").strip()
 
-        self.log = [Message(False, "System", time.gmtime(), f"Welcome to the chat, {self.localUser}!")]
+        self.log = [Message(False, "System", time.gmtime(), f"Welcome to the chat, {self.localUser}! Connecting you now...")]
+
 
     def Listen(self) -> None:
-        while True:
-            try:
-                msg, _a, _p = utf8get(self.sock)
-                decoded = Message.FromString(msg)
-                if decoded.system:
-                    if decoded.text == "DISCONNECT":
-                        # exit(0)
-                        os._exit()
-                        
-                self.log.append(decoded)
+        event = self.host.service(0)
+        peer = event.peer
+        packet = event.packet
 
-            except socket.timeout:
+        match event.type:
+            case enet.EVENT_TYPE_NONE:
                 pass
 
-            except:
-                pass
+            case enet.EVENT_TYPE_CONNECT:
+                self.log.append(Message(False, "System", time.gmtime(), f"You have connected to {peer.address.host, peer.address.port}"))
+
+            case enet.EVENT_TYPE_DISCONNECT:
+                self.log.append(Message(False, "System", time.gmtime(), "You have disconnected"))
+                exit("Your peer has left")
+                
+                
+            case enet.EVENT_TYPE_RECEIVE:
+                message = Message.FromBytes(packet.data)
+                if message.system:
+                    pass
+                else:
+                    self.log.append(message)
+                
 
 
     def Send(self, message:str, system:bool=False) -> None:
@@ -59,13 +65,14 @@ class Chatroom:
         self.log.append(Message(False, self.localUser, time.gmtime(), message))
         # Create a json copy of the message, encoded in utf8, base64
         msg = json.dumps({"system":system, "user": self.localUser, "text":message, "time": time.gmtime()})
-        msg = base64.b64encode(msg.encode('utf8'))
         # Send it
-        utf8send(self.sock, msg, self.ip, self.port)
+        packet = enet.Packet(msg.encode('utf8'), enet.PACKET_FLAG_RELIABLE)
+        self.peer.send(self.channel, packet)
 
-    # (Not implemented) Signal peer that we are leaving the room
+
     def SendDisconnect(self) -> None:
-        self.Send("DISCONNECT", system=True)
+        self.peer.disconnect()
+        self.host.service(0)
 
 
     def DrawLogWindow(self) -> None:
@@ -99,10 +106,9 @@ class Chatroom:
         curses.noecho()
         curses.halfdelay(1)
 
-        t = threading.Thread(target = self.Listen)
-        t.start()
-
         while True:
+            self.Listen()
+
             try:
                 k = screen.getkey()
 
@@ -116,7 +122,6 @@ class Chatroom:
 
                     case _:
                         currentMessage += k
-
 
             except curses.error:
                 pass
