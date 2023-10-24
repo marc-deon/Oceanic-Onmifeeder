@@ -16,11 +16,6 @@ class Message:
     time:datetime
     text:str
 
-    def FromString(msg:str) -> 'Message':
-        msg = base64.b64decode(msg).decode('utf8')
-        msg = json.loads(msg)
-        return Message(msg["system"],msg["user"], msg["time"], msg["text"])
-
     def FromBytes(msg:bytes) -> 'Message':
         msg = json.loads(msg.decode())
         return Message(msg["system"],msg["user"], msg["time"], msg["text"])
