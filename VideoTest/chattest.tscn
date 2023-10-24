@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3 uid="uid://ollkeok0042r"]
 
-[ext_resource type="Script" path="res://rudp_test_client.gd" id="1_tedfr"]
+[ext_resource type="Script" path="res://enet_chat_test.gd" id="1_tedfr"]
 [ext_resource type="FontFile" uid="uid://bvjh1mewm6bid" path="res://NotoColorEmoji.ttf" id="2_v0u55"]
 
 [node name="rudpTestClient" type="MarginContainer"]

@@ -1,13 +1,13 @@
 extends VBoxContainer
 const ChatMessage = preload("res://chatmessage.tscn")
-const RudpPort = preload("res://rudp_port.gd")
 
 const nana = "大場なな"
 const junna = "星見純那"
 
 var localUser:String = nana
-var send_socket:RudpPort
-var receive_socket:RudpPort
+var conn:ENetConnection
+var peer:ENetPacketPeer
+var channel:int
 
 var dialogue = [
 	["　　", "   "],
@@ -47,9 +47,9 @@ func AdvanceDialogue():
 			_on_text_edit_text_submitted($HBoxContainer/TextEdit.text)
 	pass
 
-func DecodeMessage(msg:String) -> Dictionary:
-	var utf8 = Marshalls.base64_to_utf8(msg)
-	return JSON.parse_string(utf8)
+func DecodeMessage(msg:PackedByteArray) -> Dictionary:
+	#var utf8 = Marshalls.base64_to_utf8(msg)
+	return JSON.parse_string(msg.get_string_from_utf8())
 
 func ClearLog():
 	while $Log.get_child_count() > 0:
@@ -65,38 +65,49 @@ func AddMessage(username:String, time:String, text:String, color:Color=Color.LIG
 
 func SendMessage(time:String, message:String, system:bool=false):
 	var s = JSON.stringify({"system":system, "user":localUser, "text":message, "time":time})
-	send_socket.Send(s)
+	peer.send(self.channel, s.to_utf8_buffer(), ENetPacketPeer.FLAG_RELIABLE)
 
 
 func _ready():
 	$DialogueTimer.wait_time = sec_per_chara
 	$DialogueTimer.start()
 
-func init(_send_socket:RudpPort, _receive_socket:RudpPort, username:String):
+func init(conn:ENetConnection, peer:ENetPacketPeer, channel:int, username:String):
+	print("init")
 	ClearLog()
 	localUser = username
 	$HBoxContainer/RichTextLabel.text = localUser
 	var color = Color.YELLOW if username == nana else Color.LIGHT_SKY_BLUE if username == junna else Color.ANTIQUE_WHITE
 	$HBoxContainer/RichTextLabel.add_theme_color_override("default_color", color)
-	self.send_socket = _send_socket
-	self.receive_socket = _receive_socket
+	self.conn = conn
+	self.peer = peer
+	self.channel = channel
 	AddMessage("System", Time.get_time_string_from_system(false), "Welcome to the chat, %s!" % localUser)
 
 func _process(delta):
 	Listen()
 
 func Listen() -> void:
-	var received = await receive_socket.Receive()
-	var string:String = received.string
-	# In hindsight, doing a substring here in python lazy. Python might do it,
-	# but of *course* other languages won't use the b"" format. They might not
-	# even have byte literals in the first place!
-	var message:Dictionary = DecodeMessage(string)
+	var type_peer_data_channel = conn.service(0)
+	var event_type = type_peer_data_channel[0]
+	var peer:ENetPacketPeer = type_peer_data_channel[1]
 	
-	if message['system'] and message['text'] == "DISCONNECT":
-		pass
-	var color = Color.YELLOW if message['user'] == nana else Color.LIGHT_SKY_BLUE if message['user'] == junna else Color.ANTIQUE_WHITE
-	AddMessage(message["user"], message["time"], message["text"], color)
+	match event_type:
+		ENetConnection.EVENT_ERROR:
+			AddMessage("System", Time.get_time_string_from_system(false), "Error: Disconnected")
+		ENetConnection.EVENT_DISCONNECT:
+			AddMessage("System", Time.get_time_string_from_system(false), "Disconnected")
+		ENetConnection.EVENT_NONE:
+			pass
+		ENetConnection.EVENT_CONNECT:
+			AddMessage("System", Time.get_time_string_from_system(false), "Cconnected")
+		ENetConnection.EVENT_RECEIVE:
+			var bytes := peer.get_packet()
+			var message:Dictionary = DecodeMessage(bytes)
+	
+			var color = Color.YELLOW if message['user'] == nana else Color.LIGHT_SKY_BLUE if message['user'] == junna else Color.ANTIQUE_WHITE
+			AddMessage(message["user"], message["time"], message["text"], color)
+	
 
 
 func _on_text_edit_text_submitted(new_text:String):

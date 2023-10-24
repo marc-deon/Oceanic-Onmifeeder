@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3 uid="uid://dnrntgqgwuxar"]
 
-[ext_resource type="Script" path="res://chattest.gd" id="1_mqumq"]
+[ext_resource type="Script" path="res://chatroom.gd" id="1_mqumq"]
 [ext_resource type="PackedScene" uid="uid://clfnuvysh7o8p" path="res://chatmessage.tscn" id="2_pwgnt"]
 
 [node name="Chatroom" type="VBoxContainer"]

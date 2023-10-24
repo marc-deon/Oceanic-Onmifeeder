@@ -1,7 +1,6 @@
 class_name PacketPeerUDPTimeout
 extends PacketPeerUDP
 
-var _timer:Timer = Timer.new()
 var _timeout_time:float = 0.2
 signal timeout
 
