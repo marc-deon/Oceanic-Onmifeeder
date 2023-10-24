@@ -24,6 +24,8 @@ func holepunch(sock:PacketPeerUDPTimeout, mainIp:String, altIp:String, tentative
 		
 		# We must figure out whether to use the public or local IP for the peer
 		var actual = ""
+		var ourActual:String
+		var ourPort:int
 		# We can try to contact the peer over this tentative port, but we may have to switch
 		var port = tentativePort
 
@@ -46,6 +48,7 @@ func holepunch(sock:PacketPeerUDPTimeout, mainIp:String, altIp:String, tentative
 					utf8send(sock, "HAND1", altIp, altPort)
 
 				# Listen for message from peer
+				await sock.wait_timeout()
 				var response = utf8get(sock, true)
 				var msg:Array = response[0];
 				var ip:String = response[1];
@@ -66,21 +69,23 @@ func holepunch(sock:PacketPeerUDPTimeout, mainIp:String, altIp:String, tentative
 							continue
 
 						port = p
-						utf8send(sock, "HAND2", actual, port)
+						utf8send(sock, "HAND2 " + actual + " " + str(port), actual, port)
 
 					# Peer heard our IAM and is responding!
-					["HAND2"]:
+					["HAND2", var oa, var op]:
 						# Send one final YOUARE back to them
 						port = p
 						actual = ip
-						utf8send(sock, "HAND2", actual, port)
+						ourActual = oa
+						ourPort = int(op)
+						utf8send(sock, "HAND2 " + actual + " " + str(port), actual, port)
 						break
 
 					_:
 						print("Malformed message")
 
 		print("Handshook ", actual, " ", port, ".")
-		return [actual, port]
+		return [actual, port, ourActual, ourPort]
 
 
 func _on_host_button_pressed():
@@ -109,14 +114,15 @@ func _on_host_button_pressed():
 			["EXPECT", var clientAddr, var clientLocal, var clientPort, var clientLocalPort]:
 				# Find our peer
 				print("host hp ", clientAddr, " ", clientLocal, " ", int(clientPort), " ", int(clientLocalPort))
-				var addr = holepunch(sock, clientAddr, clientLocal, int(clientPort), int(clientLocalPort))
-
+				var addr = await holepunch(sock, clientAddr, clientLocal, int(clientPort), int(clientLocalPort))
+				local = addr[2]
+				ourport = addr[3]
 				# We don't need this anymore
 				sock.close()
 				
 				# ENet stuff
 				var conn = ENetConnection.new()
-				conn.create_host_bound('127.0.0.1', ourport)
+				conn.create_host_bound(local, ourport)
 				var peer = conn.connect_to_host(addr[0], addr[1])
 
 				# Start demo chatroom
@@ -158,14 +164,15 @@ func _on_connect_button_pressed():
 				# Find our peer
 				
 				print("client hp ", hostAddr, " ", hostLocal, " ", int(hostPort), " ", int(hostLocalPort))
-				var addr = holepunch(sock, hostAddr, hostLocal, int(hostPort), int(hostLocalPort))
-
+				var addr = await holepunch(sock, hostAddr, hostLocal, int(hostPort), int(hostLocalPort))
+				local = addr[2]
+				ourport = addr[3]
 				# We don't need this anymore
 				sock.close()
 
 				# ENet stuff
 				var conn = ENetConnection.new()
-				conn.create_host_bound('127.0.0.1', ourport)
+				conn.create_host_bound(local, ourport)
 				var ip = addr[0]
 				var port = addr[1]
 				print(ip, " ", port)
