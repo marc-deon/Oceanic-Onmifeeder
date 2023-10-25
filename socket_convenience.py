@@ -92,14 +92,14 @@ def holepunch(sock:socket.socket, mainIp:str, altIp:str, tentativePort:int, altP
                             continue
 
                         port = p
-                        utf8send(sock, "HAND2", actual, port)
+                        utf8send(sock, f"HAND2 {actual} {port}", actual, port)
 
                     # Peer heard our IAM and is responding!
                     case ["HAND2"]:
                         # Send one final YOUARE back to them
                         port = p
                         actual = ip
-                        utf8send(sock, "HAND2", actual, port)
+                        utf8send(sock, f"HAND2 {actual} {port}", actual, port)
                         break
 
                     case _:
