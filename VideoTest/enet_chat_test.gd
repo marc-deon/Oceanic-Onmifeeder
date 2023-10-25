@@ -4,89 +4,6 @@ const Chatroom = preload("res://chatroom.tscn")
 
 const LOCAL_TEST = true
 
-func utf8send(sock, msg, ip, port):
-	sock.set_dest_address(ip, port)
-	sock.put_packet(msg.to_utf8_buffer())
-
-
-func utf8get(sock:PacketPeerUDPTimeout, split:bool):
-	var msg = sock.get_packet().get_string_from_utf8()
-	var addr = sock.get_packet_ip()
-	var port = sock.get_packet_port()
-	if split:
-		msg = msg.split(" ")
-	return [msg, addr, int(port)]
-
-
-#																							[str, int, str, int]
-func holepunch(sock:PacketPeerUDPTimeout, mainIp:String, altIp:String, tentativePort:int, altPort:int) -> Array:
-		"""Handshake function to connect to connect to a main/alt IP."""
-		
-		# We must figure out whether to use the public or local IP for the peer
-		var actual = ""
-		var ourActual:String
-		var ourPort:int
-		# We can try to contact the peer over this tentative port, but we may have to switch
-		var port = tentativePort
-
-		var attempts = 0
-		while attempts <= 5:
-			attempts += 1
-			# Tryblock
-			
-			# Try to contact peer on internet
-			utf8send(sock, "HAND1", mainIp, port)
-
-			if altIp:
-				# Try to contact peer on local network
-				utf8send(sock, "HAND1", altIp, port)
-
-			if altPort:
-				utf8send(sock, "HAND1", mainIp, altPort)
-				
-				if altIp:
-					utf8send(sock, "HAND1", altIp, altPort)
-
-				# Listen for message from peer
-				await sock.wait_timeout()
-				var response = utf8get(sock, true)
-				var msg:Array = response[0];
-				var ip:String = response[1];
-				var p:int     = response[2]
-
-				match msg:
-					# Peer has made contact with us
-					["HAND1"]:
-						if ip == mainIp:
-							actual = mainIp
-
-						elif ip == altIp:
-							actual = altIp
-
-						else:
-							# This is a third-party trying to connect
-							print("That's my purse!", ip)
-							continue
-
-						port = p
-						utf8send(sock, "HAND2 " + actual + " " + str(port), actual, port)
-
-					# Peer heard our IAM and is responding!
-					["HAND2", var oa, var op]:
-						# Send one final YOUARE back to them
-						port = p
-						actual = ip
-						ourActual = oa
-						ourPort = int(op)
-						utf8send(sock, "HAND2 " + actual + " " + str(port), actual, port)
-						break
-
-					_:
-						print("Malformed message")
-
-		print("Handshook ", actual, " ", port, ".")
-		return [actual, port, ourActual, ourPort]
-
 
 func _on_host_button_pressed():
 	var sock := PacketPeerUDPTimeout.new()
@@ -114,7 +31,7 @@ func _on_host_button_pressed():
 			["EXPECT", var clientAddr, var clientLocal, var clientPort, var clientLocalPort]:
 				# Find our peer
 				print("host hp ", clientAddr, " ", clientLocal, " ", int(clientPort), " ", int(clientLocalPort))
-				var addr = await holepunch(sock, clientAddr, clientLocal, int(clientPort), int(clientLocalPort))
+				var addr = await sock.holepunch(clientAddr, clientLocal, int(clientPort), int(clientLocalPort))
 				local = addr[2]
 				ourport = addr[3]
 				# We don't need this anymore
@@ -164,7 +81,7 @@ func _on_connect_button_pressed():
 				# Find our peer
 				
 				print("client hp ", hostAddr, " ", hostLocal, " ", int(hostPort), " ", int(hostLocalPort))
-				var addr = await holepunch(sock, hostAddr, hostLocal, int(hostPort), int(hostLocalPort))
+				var addr = await sock.holepunch(hostAddr, hostLocal, int(hostPort), int(hostLocalPort))
 				local = addr[2]
 				ourport = addr[3]
 				# We don't need this anymore
