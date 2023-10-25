@@ -1,8 +1,8 @@
 [gd_scene load_steps=4 format=3 uid="uid://dpmw1n0onhdkf"]
 
-[ext_resource type="Script" path="res://VideoTest.gd" id="1_2mrgw"]
 [ext_resource type="Texture2D" uid="uid://c8nh38nw53ual" path="res://demo.png" id="1_j84c0"]
 [ext_resource type="Script" path="res://main.gd" id="1_wfqsr"]
+[ext_resource type="Script" path="res://CameraDisplay.gd" id="3_te02d"]
 
 [node name="ControlRoot" type="PanelContainer"]
 anchors_preset = 15
@@ -36,6 +36,10 @@ text = "Home"
 layout_mode = 2
 text = "Settings"
 
+[node name="Connect" type="Button" parent="HBoxContainer/SidePanel/VBoxContainer"]
+layout_mode = 2
+text = "Connect"
+
 [node name="Empty" type="Control" parent="HBoxContainer/SidePanel/VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 3
@@ -54,13 +58,13 @@ alignment = 1
 [node name="Label" type="Label" parent="HBoxContainer/HomePanel/VBoxContainer/IP"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Connecting to"
+text = "Connecting to:"
 horizontal_alignment = 2
 
 [node name="Value" type="Label" parent="HBoxContainer/HomePanel/VBoxContainer/IP"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "00°"
+text = "Not connected"
 
 [node name="Camera" type="TextureRect" parent="HBoxContainer/HomePanel/VBoxContainer"]
 custom_minimum_size = Vector2(10, 10)
@@ -68,7 +72,7 @@ layout_mode = 2
 texture = ExtResource("1_j84c0")
 expand_mode = 5
 stretch_mode = 5
-script = ExtResource("1_2mrgw")
+script = ExtResource("3_te02d")
 
 [node name="Temperature" type="HBoxContainer" parent="HBoxContainer/HomePanel/VBoxContainer"]
 layout_mode = 2
@@ -136,3 +140,4 @@ secret = true
 [connection signal="toggled" from="HBoxContainer/SidePanel/VBoxContainer/Hamburger" to="." method="_on_hamburger_toggled"]
 [connection signal="pressed" from="HBoxContainer/SidePanel/VBoxContainer/Home" to="." method="_on_home_pressed"]
 [connection signal="pressed" from="HBoxContainer/SidePanel/VBoxContainer/Settings" to="." method="_on_settings_pressed"]
+[connection signal="pressed" from="HBoxContainer/SidePanel/VBoxContainer/Connect" to="." method="_on_connect_pressed"]

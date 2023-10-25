@@ -177,6 +177,7 @@ def wait_for_holepunch(hp_sock:Socket) -> tuple[str, int, str, int]:
 
         except TimeoutError:
             # Refresh the port
+            print("refresh")
             utf8send(hp_sock, "FRSH", HP_SERVER)
             continue
 

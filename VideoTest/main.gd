@@ -27,3 +27,8 @@ func _on_home_pressed():
 func _on_settings_pressed():
 	homePanel.visible = false
 	settingsPanel.visible = true
+
+
+func _on_connect_pressed():
+	var peer = await $HBoxContainer/HomePanel/VBoxContainer/Camera.ConnectToPeer()
+	$HBoxContainer/HomePanel/VBoxContainer/IP/Value.text = peer[0] + ":" + str(peer[1])
