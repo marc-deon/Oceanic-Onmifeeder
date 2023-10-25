@@ -18,7 +18,7 @@ func utf8get(sock:PacketPeerUDPTimeout, split:bool):
 	return [msg, addr, int(port)]
 
 
-#																							[str, int]
+#																							[str, int, str, int]
 func holepunch(sock:PacketPeerUDPTimeout, mainIp:String, altIp:String, tentativePort:int, altPort:int) -> Array:
 		"""Handshake function to connect to connect to a main/alt IP."""
 		

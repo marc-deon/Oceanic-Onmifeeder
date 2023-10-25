@@ -19,11 +19,11 @@ HOLEPUNCH_CODE = "poseidon"
 # Create a socket, open a random port
 hp_sock = sc.CreateSocket()
 sc.utf8send(hp_sock, "FRSH", SERVER_ADDR)
-ourport = sc.GetSocketPort(hp_sock)
+ourPort = sc.GetSocketPort(hp_sock)
 
 if hostOrConnect == "host":
     # Request a spot in the holepunch server
-    sc.utf8send(hp_sock, f"HOST {sc.GetLocalIp()} {HOLEPUNCH_CODE} {ourport}", SERVER_ADDR)
+    sc.utf8send(hp_sock, f"HOST {sc.GetLocalIp()} {HOLEPUNCH_CODE} {ourPort}", SERVER_ADDR)
     msg = sc.utf8get(hp_sock, True)[0]
 
     while True:
@@ -36,11 +36,11 @@ if hostOrConnect == "host":
 
                 case ["EXPECT", clientaddr, clientlocal, clientport, clientlocalport]:
                     # Find our peer
-                    peerIp, peerPort = sc.holepunch(hp_sock, clientaddr, clientlocal, clientport, clientlocalport)
+                    peerIp, peerPort, ourIp, ourPort = sc.holepunch(hp_sock, clientaddr, clientlocal, clientport, clientlocalport)
                     # We don't need this anymore
                     hp_sock.close()
                     # enet stuff
-                    host = enet.Host(enet.Address(None, ourport), peerCount=2)
+                    host = enet.Host(enet.Address(ourIp, ourPort), peerCount=2)
                     peer = host.connect(enet.Address(peerIp, peerPort), channelCount=1)
                     # Start chatroom
                     cr = enet_chatroom.Chatroom(host, peer, 0, username)
