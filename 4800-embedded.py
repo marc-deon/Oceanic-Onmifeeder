@@ -26,6 +26,7 @@ SERVER_IP = '4800.highlyderivative.games'
 SERVER_PORT = 4800
 WEBCAM_WIDTH = 320
 
+# TODO(#4): Copy CHANNELS to godot
 class CHANNELS(enum.IntEnum):
     CHANNEL_HOLEPUNCH = enum.auto()
     CHANNEL_CONTROL = enum.auto()
@@ -33,6 +34,7 @@ class CHANNELS(enum.IntEnum):
     CHANNEL_VIDEO = enum.auto()
     CHANNEL_MAX = enum.auto()
 
+# TODO: Copy ERROR to godot
 class ERROR(enum.Enum):
     ERROR = enum.auto()
     OK = enum.auto()
@@ -42,6 +44,7 @@ class ERROR(enum.Enum):
     PH_MINMAX = enum.auto()
     FEED_ERROR = enum.auto()
 
+# TODO: Copy MESSAGE to godot
 class MESSAGE:
     GET_SETTINGS = "GET_SETTINGS"
     MANUAL_FEED = "MANUAL_FEED"
