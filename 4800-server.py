@@ -13,7 +13,7 @@ def main():
     s.bind(socket_address)
     print("Listening at", socket_address)
     while True:
-        msg, addr, port = utf8get(s)
+        msg, addr, port = utf8get(s, True)
         match msg:
             case ["HOST", local, username, localport]:
                 userdict[username] = local, addr, port, localport
