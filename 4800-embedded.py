@@ -261,7 +261,7 @@ def Service(host:enet.Host) -> None:
                     response = HandleStats(event.packet.data)
                 case CHANNELS.CHANNEL_VIDEO:
                     response = HandleVideo(event.packet.data)
-                    flag = enet.PACKET_FLAG_UNRELIABLE_FRAGMENT | enet.PACKET_FLAG_UNSEQUENCED
+                    flags = enet.PACKET_FLAG_UNRELIABLE_FRAGMENT | enet.PACKET_FLAG_UNSEQUENCED
 
     if response:
         event.peer.send(channel, enet.Packet(response, flags))
