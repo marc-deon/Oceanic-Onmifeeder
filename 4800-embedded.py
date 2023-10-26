@@ -40,6 +40,7 @@ class ERROR(enum.IntEnum):
     OK = enum.auto()
     MALFORMED_TIME = enum.auto()
     INVALID_TIME = enum.auto()
+    INVALID_LENGTH = enum.auto()
     TEMP_MINMAX = enum.auto()
     PH_MINMAX = enum.auto()
     FEED_ERROR = enum.auto()
@@ -86,7 +87,7 @@ def LoadSettings(force_default=False) -> None:
             settings = Settings(**json.load(f))
     except:
         settings = Settings()
-        print("Using default settings")
+        print("Error: using default settings")
 
 
 def SaveSettings() -> bool:
@@ -108,16 +109,17 @@ def FeedServo() -> bool:
 
 
 def HandleControl(message:str) -> str:
-    """Deal with the bulk of ENet message"""
+    """Deal with the bulk of ENet message, i.e. managing settings and manual feeding"""
     ## Message format TBD, but maybe something like this?
     ## GET_SETTINGS -> OK, dict
     ## MANUAL_FEED -> OK
     ## SET_FEED_TIME {TIME} -> OK
     ## SET_TEMP_WARNING {LOW} {HIGH} -> OK
     ## SET_PH_WARNING {LOW} {HIGH} -> OK
-    response = ""
+    response = []
 
     match message:
+        # Send relevent settings back to the app
         case [MESSAGE.GET_SETTINGS]:
             # Don't wanna return *all* the settings...
             d = {
@@ -128,6 +130,8 @@ def HandleControl(message:str) -> str:
             }
             response = [ERROR.OK, d]
 
+
+        # Manually trigger feeding
         case [MESSAGE.MANUAL_FEED]:
             ok = FeedServo()
             if ok:
@@ -135,6 +139,8 @@ def HandleControl(message:str) -> str:
             else:
                 response = [ERROR.ERROR, ERROR.FEED_ERROR]
 
+
+        # Set a daily feed time
         case [MESSAGE.SET_FEED_TIME, time]:
             # Expects 24 HH:MM
             # Split into hours and minutes, convert to integers
@@ -149,13 +155,17 @@ def HandleControl(message:str) -> str:
                 settings.feed_time = time
                 response = [ERROR.OK]
 
-        case [MESSAGE.SET_FEED_LENGTH, length]:
-            length = float(length)
-            if length <= 0:
-                response = [ERROR.ERROR, ERROR.INVALID_TIME]
-            else:
-                settings.feed_length = length
 
+        # Set how long the door should be open for feeding
+        case [MESSAGE.SET_FEED_LENGTH, seconds]:
+            seconds = float(seconds)
+            if seconds <= 0:
+                response = [ERROR.ERROR, ERROR.INVALID_LENGTH]
+            else:
+                settings.feed_length = seconds
+
+
+        # Set minimum and maximum temperature warnings
         case [MESSAGE.SET_TEMP_WARNING, low, high]:
             low, high = float(low), float(high)
             if high <= low:
@@ -165,6 +175,8 @@ def HandleControl(message:str) -> str:
                 settings.temp_warning = low, high
                 response = [ERROR.OK]
 
+
+        # Set minimum and maximum pH warnings
         case [MESSAGE.SET_PH_WARNING, low, high]:
             low, high = float(low), float(high)
             if high <= low:
@@ -174,11 +186,15 @@ def HandleControl(message:str) -> str:
                 # Do the thing
                 settings.ph_warning = low, high
                 response = [ERROR.OK]
-            
+
+
+        # Reset settings
         case [MESSAGE.RESET_SETTINGS]:
             settings = Settings()
             response = [ERROR.OK]
         
+
+        # Save settings
         case [MESSAGE.SAVE_SETTINGS]:
             SaveSettings()
             response = [ERROR.OK]
@@ -198,6 +214,7 @@ def HandleStats(message:str) -> str:
 demo_vid = None
 # TODO(#9): Implement webcam streaming fully
 def HandleVideo(message:str, use_demo:bool=True) -> bytes:
+    """Capture a video frame from the webcam and prepare it to be send to the app"""
     global demo_vid
 
     if use_demo:
@@ -237,6 +254,7 @@ def RegisterForHolepunch() -> None:
 
 
 def Service(host:enet.Host) -> None:
+    """Main loop"""
     event = host.service(0)
     response = None
     channel = None
