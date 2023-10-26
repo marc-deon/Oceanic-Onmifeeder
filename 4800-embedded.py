@@ -35,7 +35,7 @@ class CHANNELS(enum.IntEnum):
     CHANNEL_MAX = enum.auto()
 
 # TODO(#5): Copy ERROR to godot
-class ERROR(enum.Enum):
+class ERROR(enum.IntEnum):
     ERROR = enum.auto()
     OK = enum.auto()
     MALFORMED_TIME = enum.auto()
@@ -45,15 +45,15 @@ class ERROR(enum.Enum):
     FEED_ERROR = enum.auto()
 
 # TODO(#6): Copy MESSAGE to godot
-class MESSAGE:
-    GET_SETTINGS = "GET_SETTINGS"
-    MANUAL_FEED = "MANUAL_FEED"
-    SET_FEED_TIME = "SET_FEED_TIME"
-    SET_FEED_LENGTH = "SET_FEED_LENGTH"
-    SET_TEMP_WARNING = "SET_TEMP_WARNING"
-    SET_PH_WARNING = "SET_PH_WARNING"
-    RESET_SETTINGS = "RESET_SETTINGS"
-    SAVE_SETTINGS = "SAVE_SETTINGS"
+class MESSAGE(enum.IntEnum):
+    GET_SETTINGS = enum.auto()
+    MANUAL_FEED = enum.auto()
+    SET_FEED_TIME = enum.auto()
+    SET_FEED_LENGTH = enum.auto()
+    SET_TEMP_WARNING = enum.auto()
+    SET_PH_WARNING = enum.auto()
+    RESET_SETTINGS = enum.auto()
+    SAVE_SETTINGS = enum.auto()
 
 @dataclass
 class Settings:
