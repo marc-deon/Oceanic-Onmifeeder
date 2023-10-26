@@ -44,7 +44,7 @@ class ERROR(enum.Enum):
     PH_MINMAX = enum.auto()
     FEED_ERROR = enum.auto()
 
-# TODO: Copy MESSAGE to godot
+# TODO(#6): Copy MESSAGE to godot
 class MESSAGE:
     GET_SETTINGS = "GET_SETTINGS"
     MANUAL_FEED = "MANUAL_FEED"
