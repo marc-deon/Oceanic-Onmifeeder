@@ -1,0 +1,49 @@
+[gd_scene load_steps=3 format=3 uid="uid://dnrntgqgwuxar"]
+
+[ext_resource type="Script" path="res://chatroom.gd" id="1_mqumq"]
+[ext_resource type="PackedScene" uid="uid://clfnuvysh7o8p" path="res://chatmessage.tscn" id="2_pwgnt"]
+
+[node name="Chatroom" type="VBoxContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = -2.0
+offset_bottom = -2.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_mqumq")
+
+[node name="Log" type="VBoxContainer" parent="."]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Message" parent="Log" instance=ExtResource("2_pwgnt")]
+layout_mode = 2
+
+[node name="Message2" parent="Log" instance=ExtResource("2_pwgnt")]
+layout_mode = 2
+
+[node name="Message3" parent="Log" instance=ExtResource("2_pwgnt")]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="RichTextLabel" type="RichTextLabel" parent="HBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 4
+text = "Name"
+fit_content = true
+autowrap_mode = 0
+
+[node name="TextEdit" type="LineEdit" parent="HBoxContainer"]
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 16
+placeholder_text = "And it shall be bestowed upon you, the star which you have longed for..."
+
+[node name="DialogueTimer" type="Timer" parent="."]
+
+[connection signal="text_submitted" from="HBoxContainer/TextEdit" to="." method="_on_text_edit_text_submitted"]
+[connection signal="timeout" from="DialogueTimer" to="." method="_on_dialogue_timer_timeout"]
