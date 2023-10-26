@@ -1,12 +1,15 @@
 from time import sleep
+
 def _OpenFeedDoor() -> bool:
     return True
+
 
 def _CloseFeedDoor() -> bool:
     return True
 
+
 def Feed(feed_time) -> bool:
-    
+    """Open and close the feeding door"""
     result = _OpenFeedDoor()
     if not result:
         return False
