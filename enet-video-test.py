@@ -27,7 +27,7 @@ while True:
     #         if event.packet.data != b'1':
     #             continue
     
-    sleep(1/30)
+    sleep(1/15)
 
     # Read next frame
     nextFrameValid, frame = vid.read()
