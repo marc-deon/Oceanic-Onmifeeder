@@ -100,7 +100,7 @@ def SaveSettings() -> bool:
     return True
 
 
-# TODO: Implement servo control
+# TODO(#7): Implement servo control
 def FeedServo() -> bool:
     """Open and close the feed door"""
     # if not empty?
