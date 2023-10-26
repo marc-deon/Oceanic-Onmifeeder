@@ -34,7 +34,7 @@ class CHANNELS(enum.IntEnum):
     CHANNEL_VIDEO = enum.auto()
     CHANNEL_MAX = enum.auto()
 
-# TODO: Copy ERROR to godot
+# TODO(#5): Copy ERROR to godot
 class ERROR(enum.Enum):
     ERROR = enum.auto()
     OK = enum.auto()
