@@ -55,6 +55,7 @@ def main():
                     utf8send(s, connto, addr, port)
                     userdict.pop(username)
                 else:
+                    print("Username", username, "not present")
                     utf8send(s, f"USERNAME_NOT_PRESENT", addr, port)
             case _:
                 print("Unknown message", msg)
