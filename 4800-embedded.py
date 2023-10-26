@@ -186,7 +186,7 @@ def HandleControl(message:str) -> str:
     return response
 
 
-# TODO: Implement stats (temp, ph) reading
+# TODO(#8): Implement stats (temp, ph) reading
 def HandleStats(message:str) -> str:
     """Return current temp, ph"""
     temp = random.randint(75, 80)
