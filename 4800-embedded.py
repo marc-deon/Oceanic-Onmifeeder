@@ -225,7 +225,7 @@ def HandleVideo(message:str, use_demo:bool=True) -> bytes:
     return bytes(buffer)
 
 
-# TODO: Implement holepunch via ENet
+# TODO(#10): Implement holepunch via ENet
 def RegisterForHolepunch() -> None:
     # I think that holepunching should indeed use enet...
     # Simpler to keep the port alive, don't need to FRSH
