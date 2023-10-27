@@ -42,7 +42,8 @@ def main():
 
 
 def enet_main():
-    userdict = {}
+    userdict = {} # username -> ip ip port port
+    hostdict = {} # username -> enet.peer
 
     enetHost = enet.Host(enet.Address(HOST_IP, HOST_PORT), peerCount=32)
     while True:
@@ -56,26 +57,33 @@ def enet_main():
             case enet.EVENT_TYPE_DISCONNECT:
                 pass
             case enet.EVENT_TYPE_RECEIVE:
-                event.packet
+                addr = event.peer.address.host
+                port = event.peer.address.port
                 match event.packet.data.decode().split(" "):
                     case ["HOST", local, username, localport]:
                         userdict[username] = local, addr, port, localport
+                        hostdict[username] = event.peer
                         event.peer.send(enet.Packet("HOSTING", enet.PACKET_FLAG_RELIABLE))
 
                     # TODO: All this
                     case ["CONN", local, username, localport]:
-
                         if username in userdict:
+                            # Get the info to send
                             hostlocal, hostaddr, hostport, hostlocalport = userdict[username]
+
+                            # This gets sent back to the original hoster
                             expect = f"EXPECT {addr} {local} {port} {localport}"
-                            connto = f"CONNTO {hostaddr} {hostlocal} {hostport} {hostlocalport}"
                             print(expect)
+                            hostdict[username].send(enet.Packet(expect, enet.PACKET_FLAG_RELIABLE))
+
+                            # This gets send to the client who just connected
+                            connto = f"CONNTO {hostaddr} {hostlocal} {hostport} {hostlocalport}"
                             print(connto)
-                            event.peer.send()
-                            event.peer.send()
-                            utf8send(s, expect, hostaddr, hostport)
-                            utf8send(s, connto, addr, port)
+                            event.peer.send(enet.Packet(connto, enet.PACKET_FLAG_RELIABLE))
+
+                            # Remove info from dictionaries
                             userdict.pop(username)
+                            hostdict.pop(username).disconnect()
                         else:
                             print("Username", username, "not present")
                             utf8send(s, f"USERNAME_NOT_PRESENT", addr, port)
