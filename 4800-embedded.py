@@ -21,20 +21,20 @@ import random
 import servo_control
 from dataclasses import dataclass, field
 from typing import List
+import socket_convenience as sc
 
 SERVER_IP = '4800.highlyderivative.games'
 SERVER_PORT = 4800
 WEBCAM_WIDTH = 320
 
-# TODO(#4): Copy CHANNELS to godot
 class CHANNELS(enum.IntEnum):
-    CHANNEL_HOLEPUNCH = enum.auto()
-    CHANNEL_CONTROL = enum.auto()
-    CHANNEL_STATS = enum.auto()
-    CHANNEL_VIDEO = enum.auto()
-    CHANNEL_MAX = enum.auto()
+    HOLEPUNCH = enum.auto()
+    CONTROL = enum.auto()
+    STATS = enum.auto()
+    VIDEO = enum.auto()
+    MAX = enum.auto()
 
-# TODO(#5): Copy ERROR to godot
+
 class ERROR(enum.IntEnum):
     ERROR = enum.auto()
     OK = enum.auto()
@@ -45,9 +45,10 @@ class ERROR(enum.IntEnum):
     PH_MINMAX = enum.auto()
     FEED_ERROR = enum.auto()
 
-# TODO(#6): Copy MESSAGE to godot
+
 class MESSAGE(enum.IntEnum):
     GET_SETTINGS = enum.auto()
+    GET_STATS = enum.auto()
     MANUAL_FEED = enum.auto()
     SET_FEED_TIME = enum.auto()
     SET_FEED_LENGTH = enum.auto()
@@ -64,11 +65,15 @@ class Settings:
 
     # Safe to give to app
     feed_time: List[int]     = field(default_factory=lambda: [0, 0]) # Time of day, hour and minute
-    feed_length:float        = 0                                      # seconds
+    feed_length:float        = 0                                     # seconds
     temp_warning:List[float] = field(default_factory=lambda: [0, 0]) # low, high
     ph_warning:List[float]   = field(default_factory=lambda: [0, 0]) # low, high
 
-host:enet.Host = None
+    @property
+    def hp_key(self):
+        return self._username
+
+enetHost:enet.Host = None
 
 settings:Settings
 
@@ -129,6 +134,10 @@ def HandleControl(message:str) -> str:
                 "ph_warning": settings.ph_warning,
             }
             response = [ERROR.OK, d]
+
+
+        case [MESSAGE.GET_STATS]:
+            response = [ERROR.OK, HandleStats(message)]
 
 
         # Manually trigger feeding
@@ -247,15 +256,24 @@ def RegisterForHolepunch() -> None:
     # I think that holepunching should indeed use enet...
     # Simpler to keep the port alive, don't need to FRSH
 
-    # Instantiate enet host, peer
+    # Instantiate enet host, peer; save the host
+    global enetHost
+    # Bind to all IPv4 addresses, any port?
+    enetHost = enet.Host(enet.Address('0.0.0.0', 0), peerCount=2)
+    peer = enetHost.connect(enet.Address(SERVER_IP, SERVER_PORT), channelCount=1)
+    
     # use enet to register
-    # assign global host
-    pass
+    enetHost.service(0)
+    s = f"HOST {sc.GetLocalIp()} {settings.hp_key} {enetHost.address.port}".encode()
+    peer.send(0, enet.Packet(s, enet.PACKET_FLAG_RELIABLE))
+    response = enetHost.service(1000)
+    if response.type == enet.EVENT_TYPE_NONE:
+        raise Exception("Unable to register for holepunch")
 
 
-def Service(host:enet.Host) -> None:
+def Service() -> None:
     """Main loop"""
-    event = host.service(0)
+    event = enetHost.service(0)
     response = None
     channel = None
     flags = enet.PACKET_FLAG_RELIABLE
@@ -273,11 +291,11 @@ def Service(host:enet.Host) -> None:
         case enet.EVENT_TYPE_RECEIVE:
             channel = event.channelID
             match channel:
-                case CHANNELS.CHANNEL_CONTROL:
+                case CHANNELS.CONTROL:
                     response = HandleControl(event.packet.data)
-                case CHANNELS.CHANNEL_STATS:
+                case CHANNELS.STATS:
                     response = HandleStats(event.packet.data)
-                case CHANNELS.CHANNEL_VIDEO:
+                case CHANNELS.VIDEO:
                     response = HandleVideo(event.packet.data)
                     flags = enet.PACKET_FLAG_UNRELIABLE_FRAGMENT | enet.PACKET_FLAG_UNSEQUENCED
 

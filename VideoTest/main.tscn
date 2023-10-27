@@ -137,7 +137,13 @@ layout_mode = 2
 placeholder_text = "asdasd"
 secret = true
 
+[node name="Timers" type="Node" parent="."]
+
+[node name="StatTimer" type="Timer" parent="Timers"]
+wait_time = 5.0
+
 [connection signal="toggled" from="HBoxContainer/SidePanel/VBoxContainer/Hamburger" to="." method="_on_hamburger_toggled"]
 [connection signal="pressed" from="HBoxContainer/SidePanel/VBoxContainer/Home" to="." method="_on_home_pressed"]
 [connection signal="pressed" from="HBoxContainer/SidePanel/VBoxContainer/Settings" to="." method="_on_settings_pressed"]
 [connection signal="pressed" from="HBoxContainer/SidePanel/VBoxContainer/Connect" to="." method="_on_connect_pressed"]
+[connection signal="timeout" from="Timers/StatTimer" to="." method="_on_stat_timer_timeout"]
