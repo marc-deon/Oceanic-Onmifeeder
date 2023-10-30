@@ -36,10 +36,10 @@ class Settings:
     _salted_password:str = ""
 
     # Safe to give to app
-    feed_time: List[int]     = field(default_factory=lambda: [0, 0]) # Time of day, hour and minute
-    feed_length:float        = 0                                     # seconds
-    temp_warning:List[float] = field(default_factory=lambda: [0, 0]) # low, high
-    ph_warning:List[float]   = field(default_factory=lambda: [0, 0]) # low, high
+    feed_time: List[int]     = field(default_factory=lambda: [8, 0]) # Time of day, hour and minute
+    feed_length:float        = 1                                     # seconds
+    temp_warning:List[float] = field(default_factory=lambda: [10, 99]) # low, high
+    ph_warning:List[float]   = field(default_factory=lambda: [1, 14]) # low, high
 
     @property
     def hp_key(self):
@@ -85,7 +85,7 @@ def FeedServo() -> bool:
     return servo_control.Feed()
 
 
-def HandleControl(message:str) -> dict:
+def HandleControl(message:bytes) -> dict:
     """Deal with the bulk of ENet message, i.e. managing settings and manual feeding"""
     ## Message format TBD, but maybe something like this?
     ## GET_SETTINGS -> OK, dict
@@ -93,23 +93,28 @@ def HandleControl(message:str) -> dict:
     ## SET_FEED_TIME {TIME} -> OK
     ## SET_TEMP_WARNING {LOW} {HIGH} -> OK
     ## SET_PH_WARNING {LOW} {HIGH} -> OK
-    response = None
+    global settings
 
-    match message:
+    response = None
+    message = json.loads(message.decode())
+    print("Control message", message)
+
+    match message["message_type"]:
         # Send relevent settings back to the app
-        case [MESSAGE.GET_SETTINGS]:
+        case MESSAGE.GET_SETTINGS:
             # Don't wanna return *all* the settings...
             response = {
                 "error": ERROR.OK,
+                "message_type": MESSAGE.GET_SETTINGS,
                 "feed_time": settings.feed_time,
                 "feed_length": settings.feed_length,
                 "temp_warning": settings.temp_warning,
                 "ph_warning": settings.ph_warning,
             }
-
+            print(response)
 
         # Manually trigger feeding
-        case [MESSAGE.MANUAL_FEED]:
+        case MESSAGE.MANUAL_FEED:
             ok = FeedServo()
             if ok:
                 response = {'error':ERROR.OK}
@@ -118,10 +123,10 @@ def HandleControl(message:str) -> dict:
 
 
         # Set a daily feed time
-        case [MESSAGE.SET_FEED_TIME, time]:
+        case MESSAGE.SET_FEED_TIME:
             # Expects 24 HH:MM
             # Split into hours and minutes, convert to integers
-            time = map(int, time.split(":"))
+            time = map(int, message["time"].split(":"))
             
             if len(time) != 2:
                 response = {'error': ERROR.MALFORMED_TIME}
@@ -134,8 +139,8 @@ def HandleControl(message:str) -> dict:
 
 
         # Set how long the door should be open for feeding
-        case [MESSAGE.SET_FEED_LENGTH, seconds]:
-            seconds = float(seconds)
+        case MESSAGE.SET_FEED_LENGTH:
+            seconds = float(message["seconds"])
             if seconds <= 0:
                 response = {'error': ERROR.INVALID_LENGTH}
             else:
@@ -143,8 +148,8 @@ def HandleControl(message:str) -> dict:
 
 
         # Set minimum and maximum temperature warnings
-        case [MESSAGE.SET_TEMP_WARNING, low, high]:
-            low, high = float(low), float(high)
+        case MESSAGE.SET_TEMP_WARNING:
+            low, high = message["low"], message["high"]
             if high <= low:
                 # Exact error string shown to user will be handled on clientside
                 response = {'error': ERROR.TEMP_MINMAX}
@@ -154,8 +159,8 @@ def HandleControl(message:str) -> dict:
 
 
         # Set minimum and maximum pH warnings
-        case [MESSAGE.SET_PH_WARNING, low, high]:
-            low, high = float(low), float(high)
+        case MESSAGE.SET_PH_WARNING:
+            low, high = message["low"], message["high"]
             if high <= low:
                 # Exact error string shown to user will be handled on clientside
                 response = {'error': ERROR.PH_MINMAX}
@@ -166,21 +171,21 @@ def HandleControl(message:str) -> dict:
 
 
         # Reset settings
-        case [MESSAGE.RESET_SETTINGS]:
+        case MESSAGE.RESET_SETTINGS:
             settings = Settings()
             response = {'error':ERROR.OK}
         
 
         # Save settings
-        case [MESSAGE.SAVE_SETTINGS]:
+        case MESSAGE.SAVE_SETTINGS:
             SaveSettings()
             response = {'error':ERROR.OK}
     
     return response
 
 
-# TODO(#8): Implement stats (temp, ph) reading
-def HandleStats(message:str) -> dict:
+# TODO(#8): Implement stats (temp, ph) reading from hardware
+def HandleStats(message:bytes) -> dict:
     """Return current temp, ph"""
     temp = random.randint(75, 80)
     ph =  7 + 2 * random.random() - 1
@@ -189,7 +194,7 @@ def HandleStats(message:str) -> dict:
 
 demo_vid = None
 # TODO(#9): Implement webcam streaming fully
-def HandleVideo(message:str, use_demo:bool=True) -> bytes:
+def HandleVideo(message:bytes, use_demo:bool=True) -> bytes:
     """Capture a video frame from the webcam and prepare it to be send to the app"""
     global demo_vid
 
