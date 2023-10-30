@@ -126,6 +126,14 @@ func ProcessHolepunch(bytes:PackedByteArray):
 
 
 func ProcessControl(bytes:PackedByteArray):
+	var message:Dictionary = JSON.parse_string(bytes.get_string_from_utf8())
+	if message['error'] != ERROR.OK:
+		printerr("PROCESS ERROR: ", message['error'] as ERROR)
+	
+	match message['message_type'] as MESSAGE:
+		MESSAGE.GET_SETTINGS:
+			$HBoxContainer/SettingsPanel.UpdateSettings(message)
+	
 	pass
 
 
@@ -217,9 +225,11 @@ func _on_stat_timer_timeout():
 	embeddedPeer.send(CHANNEL.STATS, packet, ENetPacketPeer.FLAG_RELIABLE)
 
 
+func _on_settings_refresh_pressed():
+	var packet = JSON.stringify({"message_type":MESSAGE.GET_SETTINGS}).to_utf8_buffer()
+	embeddedPeer.send(CHANNEL.CONTROL, packet, ENetPacketPeer.FLAG_RELIABLE)
 
 
-
-
-
-
+# TODO: Implement settings Apply button
+func _on_settings_apply_pressed():
+	pass # Replace with function body.
