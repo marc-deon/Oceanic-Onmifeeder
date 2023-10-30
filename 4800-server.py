@@ -55,6 +55,6 @@ def enet_main():
                             print("Username", username, "not present")
                     case _:
                         s = "Unknown message format".encode()
-                        print(s, event.packet.data.decode.split(" "))
+                        print(s, "from", event.peer.address.host, ":", event.peer.address.port, event.packet.data.decode().split(" "))
                         event.peer.send(CHANNELS.HOLEPUNCH, enet.Packet(s, enet.PACKET_FLAG_RELIABLE))
 enet_main()
