@@ -218,7 +218,7 @@ def HandleVideo(message:str, use_demo:bool=True) -> bytes:
     return bytes(buffer)
 
 
-# TODO(#10): Implement holepunch via ENet
+# TODO: RegisterForHolepunch()->None should probably be adapted to HandleHolepunch(bytes)->str
 def RegisterForHolepunch() -> None:
     print("registering...")
 
@@ -250,59 +250,41 @@ def RegisterForHolepunch() -> None:
 
     print("Done registering")
 
-def HandleHolepunch(b:bytes):
-    message = b.decode().split(" ")
-    print("handling holepunch", message)
-    match message:
-        case ["EXPECT", addr, local, port, localport]:
-            enetHost.connect(enet.Address(addr, int(port)), channelCount=CHANNELS.MAX)
-            enetHost.connect(enet.Address(local, int(localport)), channelCount=CHANNELS.MAX)
-            print("expecting", addr, local, int(port), int(localport))
-        case _:
-            print("Unknown HP format")
+
+def HandleHolepunch(b:bytes) -> str:
+    raise NotImplemented()
+
 
 def Service() -> None:
     """Main loop"""
 
     event = enetHost.service(500)
-    response:bytes = None
-    channel:int = None
-    flags = enet.PACKET_FLAG_RELIABLE
+    response:bytes = None             # What we will respond with, if anything
+    channel:int = None                # What channel to send the response on
+    flags = enet.PACKET_FLAG_RELIABLE # Flags to send with the response
 
     match event.type:
-        case enet.EVENT_TYPE_NONE:
-            pass
-
-        case enet.EVENT_TYPE_CONNECT:
-            print("case enet.EVENT_TYPE_CONNECT")
-            pass
-
-        case enet.EVENT_TYPE_DISCONNECT:
-            print("case enet.EVENT_TYPE_DISCONNECT")
-            pass
-
         case enet.EVENT_TYPE_RECEIVE:
             channel = CHANNELS(event.channelID)
             match channel:
                 case CHANNELS.HOLEPUNCH:
                     response = HandleHolepunch(event.packet.data)
                     response = json.dumps(response).encode()
+                
                 case CHANNELS.CONTROL:
-                    print("Got CONTROL message")
                     response = HandleControl(event.packet.data)
                     response = json.dumps(response).encode()
+                
                 case CHANNELS.STATS:
-                    # print("Got STATS message")
                     response = HandleStats(event.packet.data)
                     response = json.dumps(response).encode()
+                
                 case CHANNELS.VIDEO:
                     response = HandleVideo(event.packet.data)
                     flags = enet.PACKET_FLAG_UNRELIABLE_FRAGMENT | enet.PACKET_FLAG_UNSEQUENCED
 
     if response:
-        # print("sending response", response)
         event.peer.send(channel, enet.Packet(response, flags))
-
 
 
 def main() -> None:

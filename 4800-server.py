@@ -9,57 +9,16 @@ HOST_IP = 'highlyderivative.games'
 HOST_PORT = 4800
 socket_address = (HOST_IP, HOST_PORT)
 
-def main():
-    userdict = {}
-    s = CreateSocket()
-    s.bind(socket_address)
-    print("Listening at", socket_address)
-    while True:
-        msg, addr, port = utf8get(s, True)
-        match msg:
-            case ["HOST", local, username, localport]:
-                userdict[username] = local, addr, port, localport
-                utf8send(s, f"HOSTING", addr, port)
-
-            case ["FRSH"]:
-                #utf8send(s, "OK", addr, port)
-                pass
-
-            case ["CONN", local, username, localport]:
-                if username in userdict:
-                    hostlocal, hostaddr, hostport, hostlocalport = userdict[username]
-                    expect = f"EXPECT {addr} {local} {port} {localport}"
-                    connto = f"CONNTO {hostaddr} {hostlocal} {hostport} {hostlocalport}"
-                    print(expect)
-                    print(connto)
-                    utf8send(s, expect, hostaddr, hostport)
-                    utf8send(s, connto, addr, port)
-                    #userdict.pop(username)
-                else:
-                    print("Username", username, "not present")
-                    utf8send(s, f"USERNAME_NOT_PRESENT", addr, port)
-            case _:
-                print("Unknown message", msg)
-
-
 def enet_main():
     userdict = {} # username -> ip ip port port
     hostdict = {} # username -> enet.peer
 
     enetHost = enet.Host(enet.Address(None, HOST_PORT), peerCount=32)
     while True:
-        event = enetHost.service(500)
+        event = enetHost.service(1000)
 
         match event.type:
-            case enet.EVENT_TYPE_NONE:
-                pass
-            case enet.EVENT_TYPE_CONNECT:
-                print("connected")
-                pass
-            case enet.EVENT_TYPE_DISCONNECT:
-                pass
             case enet.EVENT_TYPE_RECEIVE:
-                print('r')
                 addr = event.peer.address.host
                 port = event.peer.address.port
                 print("Got message", event.packet.data.decode().split(" "))
@@ -70,7 +29,6 @@ def enet_main():
                         event.peer.send(CHANNELS.HOLEPUNCH, enet.Packet(b"HOSTING", enet.PACKET_FLAG_RELIABLE))
                         print("Sent HOSTING")
 
-                    # TODO: All this
                     case ["CONN", local, username, localport]:
                         if username in userdict:
                             print("username", username, "IS present")
@@ -90,7 +48,6 @@ def enet_main():
                             # Remove info from dictionaries
                             #userdict.pop(username)
                             #hostdict.pop(username).disconnect_later()
-                            hostdict[username].disconnect_later()
                             event.peer.disconnect_later()
                         else:
                             s = "USERNAME_NOT_PRESENT".encode()
@@ -101,4 +58,3 @@ def enet_main():
                         print(s, event.packet.data.decode.split(" "))
                         event.peer.send(CHANNELS.HOLEPUNCH, enet.Packet(s, enet.PACKET_FLAG_RELIABLE))
 enet_main()
-# main()
