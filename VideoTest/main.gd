@@ -44,6 +44,7 @@ var enetConnected:bool = false
 var enetConnection:ENetConnection = ENetConnection.new()
 var embeddedPeer:ENetPacketPeer
 
+
 func ConnectToPeerEnet() -> Array:
 	# Bind to all IPv4 addresses, any port; we're connecting, not listening
 	enetConnection.create_host_bound("0.0.0.0", 0)
