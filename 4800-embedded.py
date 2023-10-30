@@ -209,7 +209,6 @@ def HandleStats(message:bytes) -> dict:
 
 
 demo_vid = None
-# TODO(#9): Implement webcam streaming fully
 def HandleVideo(message:bytes, use_demo:bool=False) -> bytes:
     """Capture a video frame from the webcam and prepare it to be send to the app"""
     global demo_vid
