@@ -230,6 +230,6 @@ func _on_settings_refresh_pressed():
 	embeddedPeer.send(CHANNEL.CONTROL, packet, ENetPacketPeer.FLAG_RELIABLE)
 
 
-# TODO: Implement settings Apply button
+# TODO(#14): Implement settings Apply button
 func _on_settings_apply_pressed():
 	pass # Replace with function body.
