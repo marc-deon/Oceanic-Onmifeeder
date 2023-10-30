@@ -14,7 +14,6 @@
 # import socket_convenience
 import cv2
 import enet
-import enum
 import imutils
 import json
 import random
@@ -22,40 +21,13 @@ import servo_control
 from dataclasses import dataclass, field
 from typing import List
 import socket_convenience as sc
+from enums import *
+
 
 SERVER_IP = '4800.highlyderivative.games'
 SERVER_PORT = 4800
 WEBCAM_WIDTH = 320
 
-class CHANNELS(enum.IntEnum):
-    HOLEPUNCH = enum.auto()
-    CONTROL = enum.auto()
-    STATS = enum.auto()
-    VIDEO = enum.auto()
-    MAX = enum.auto()
-
-
-class ERROR(enum.IntEnum):
-    ERROR = enum.auto()
-    OK = enum.auto()
-    MALFORMED_TIME = enum.auto()
-    INVALID_TIME = enum.auto()
-    INVALID_LENGTH = enum.auto()
-    TEMP_MINMAX = enum.auto()
-    PH_MINMAX = enum.auto()
-    FEED_ERROR = enum.auto()
-
-
-class MESSAGE(enum.IntEnum):
-    GET_SETTINGS = enum.auto()
-    GET_STATS = enum.auto()
-    MANUAL_FEED = enum.auto()
-    SET_FEED_TIME = enum.auto()
-    SET_FEED_LENGTH = enum.auto()
-    SET_TEMP_WARNING = enum.auto()
-    SET_PH_WARNING = enum.auto()
-    RESET_SETTINGS = enum.auto()
-    SAVE_SETTINGS = enum.auto()
 
 @dataclass
 class Settings:
@@ -113,7 +85,7 @@ def FeedServo() -> bool:
     return servo_control.Feed()
 
 
-def HandleControl(message:str) -> str:
+def HandleControl(message:str) -> dict:
     """Deal with the bulk of ENet message, i.e. managing settings and manual feeding"""
     ## Message format TBD, but maybe something like this?
     ## GET_SETTINGS -> OK, dict
@@ -121,32 +93,28 @@ def HandleControl(message:str) -> str:
     ## SET_FEED_TIME {TIME} -> OK
     ## SET_TEMP_WARNING {LOW} {HIGH} -> OK
     ## SET_PH_WARNING {LOW} {HIGH} -> OK
-    response = []
+    response = None
 
     match message:
         # Send relevent settings back to the app
         case [MESSAGE.GET_SETTINGS]:
             # Don't wanna return *all* the settings...
-            d = {
+            response = {
+                "error": ERROR.OK,
                 "feed_time": settings.feed_time,
                 "feed_length": settings.feed_length,
                 "temp_warning": settings.temp_warning,
                 "ph_warning": settings.ph_warning,
             }
-            response = [ERROR.OK, d]
-
-
-        case [MESSAGE.GET_STATS]:
-            response = [ERROR.OK, HandleStats(message)]
 
 
         # Manually trigger feeding
         case [MESSAGE.MANUAL_FEED]:
             ok = FeedServo()
             if ok:
-                response = [ERROR.OK]
+                response = {'error':ERROR.OK}
             else:
-                response = [ERROR.ERROR, ERROR.FEED_ERROR]
+                response = {'error': ERROR.FEED_ERROR}
 
 
         # Set a daily feed time
@@ -156,20 +124,20 @@ def HandleControl(message:str) -> str:
             time = map(int, time.split(":"))
             
             if len(time) != 2:
-                response = [ERROR.ERROR, ERROR.MALFORMED_TIME]
+                response = {'error': ERROR.MALFORMED_TIME}
 
             if time[0] < 0 or time[0] > 23 or time[1] < 0 or time[1] > 59:
-                response = [ERROR.ERROR, ERROR.INVALID_TIME]
+                response = {'error': ERROR.INVALID_TIME}
             else:
                 settings.feed_time = time
-                response = [ERROR.OK]
+                response = {'error':ERROR.OK}
 
 
         # Set how long the door should be open for feeding
         case [MESSAGE.SET_FEED_LENGTH, seconds]:
             seconds = float(seconds)
             if seconds <= 0:
-                response = [ERROR.ERROR, ERROR.INVALID_LENGTH]
+                response = {'error': ERROR.INVALID_LENGTH}
             else:
                 settings.feed_length = seconds
 
@@ -179,10 +147,10 @@ def HandleControl(message:str) -> str:
             low, high = float(low), float(high)
             if high <= low:
                 # Exact error string shown to user will be handled on clientside
-                response = [ERROR.ERROR, ERROR.TEMP_MINMAX]
+                response = {'error': ERROR.TEMP_MINMAX}
             else:
                 settings.temp_warning = low, high
-                response = [ERROR.OK]
+                response = {'error':ERROR.OK}
 
 
         # Set minimum and maximum pH warnings
@@ -190,34 +158,33 @@ def HandleControl(message:str) -> str:
             low, high = float(low), float(high)
             if high <= low:
                 # Exact error string shown to user will be handled on clientside
-                response = [ERROR.ERROR, ERROR.PH_MINMAX]
+                response = {'error': ERROR.PH_MINMAX}
             else:
                 # Do the thing
                 settings.ph_warning = low, high
-                response = [ERROR.OK]
+                response = {'error':ERROR.OK}
 
 
         # Reset settings
         case [MESSAGE.RESET_SETTINGS]:
             settings = Settings()
-            response = [ERROR.OK]
+            response = {'error':ERROR.OK}
         
 
         # Save settings
         case [MESSAGE.SAVE_SETTINGS]:
             SaveSettings()
-            response = [ERROR.OK]
+            response = {'error':ERROR.OK}
     
     return response
 
 
 # TODO(#8): Implement stats (temp, ph) reading
-def HandleStats(message:str) -> str:
+def HandleStats(message:str) -> dict:
     """Return current temp, ph"""
     temp = random.randint(75, 80)
     ph =  7 + 2 * random.random() - 1
-    message = json.dumps({'temp': temp, 'ph': ph})
-    return message
+    return {'message_type':MESSAGE.GET_STATS, 'error': ERROR.OK, 'temp': temp, 'ph': ph}
 
 
 demo_vid = None
@@ -253,29 +220,53 @@ def HandleVideo(message:str, use_demo:bool=True) -> bytes:
 
 # TODO(#10): Implement holepunch via ENet
 def RegisterForHolepunch() -> None:
-    # I think that holepunching should indeed use enet...
-    # Simpler to keep the port alive, don't need to FRSH
+    print("registering...")
 
     # Instantiate enet host, peer; save the host
     global enetHost
     # Bind to all IPv4 addresses, any port?
-    enetHost = enet.Host(enet.Address('0.0.0.0', 0), peerCount=2)
-    peer = enetHost.connect(enet.Address(SERVER_IP, SERVER_PORT), channelCount=1)
-    
-    # use enet to register
-    enetHost.service(0)
-    s = f"HOST {sc.GetLocalIp()} {settings.hp_key} {enetHost.address.port}".encode()
-    peer.send(0, enet.Packet(s, enet.PACKET_FLAG_RELIABLE))
-    response = enetHost.service(1000)
-    if response.type == enet.EVENT_TYPE_NONE:
-        raise Exception("Unable to register for holepunch")
+    enetHost = enet.Host(enet.Address(None, 0), peerCount=32)
+    # We might want to save this later for a graceful disconnect or something
+    hpServerPeer = None
+    enetHost.connect(enet.Address(SERVER_IP, SERVER_PORT), channelCount=CHANNELS.MAX)
 
+    # use enet to register
+    s = f"HOST {sc.GetLocalIp()} {settings.hp_key} {enetHost.address.port}".encode()
+
+    # Timeout after a while
+    for _ in range(15):
+        event = enetHost.service(500)
+        if event.type == enet.EVENT_TYPE_NONE:
+            pass
+        if event.type == enet.EVENT_TYPE_CONNECT:
+            hpServerPeer = event.peer
+            hpServerPeer.send(CHANNELS.HOLEPUNCH, enet.Packet(s, enet.PACKET_FLAG_RELIABLE))
+            print("Connected, sending", s)
+        if event.type == enet.EVENT_TYPE_RECEIVE:
+            if event.packet.data == b'HOSTING':
+                break
+    else:
+        raise TimeoutError
+
+    print("Done registering")
+
+def HandleHolepunch(b:bytes):
+    message = b.decode().split(" ")
+    print("handling holepunch", message)
+    match message:
+        case ["EXPECT", addr, local, port, localport]:
+            enetHost.connect(enet.Address(addr, int(port)), channelCount=CHANNELS.MAX)
+            enetHost.connect(enet.Address(local, int(localport)), channelCount=CHANNELS.MAX)
+            print("expecting", addr, local, int(port), int(localport))
+        case _:
+            print("Unknown HP format")
 
 def Service() -> None:
     """Main loop"""
-    event = enetHost.service(0)
-    response = None
-    channel = None
+
+    event = enetHost.service(500)
+    response:bytes = None
+    channel:int = None
     flags = enet.PACKET_FLAG_RELIABLE
 
     match event.type:
@@ -283,30 +274,42 @@ def Service() -> None:
             pass
 
         case enet.EVENT_TYPE_CONNECT:
+            print("case enet.EVENT_TYPE_CONNECT")
             pass
 
         case enet.EVENT_TYPE_DISCONNECT:
+            print("case enet.EVENT_TYPE_DISCONNECT")
             pass
 
         case enet.EVENT_TYPE_RECEIVE:
-            channel = event.channelID
+            channel = CHANNELS(event.channelID)
             match channel:
+                case CHANNELS.HOLEPUNCH:
+                    response = HandleHolepunch(event.packet.data)
+                    response = json.dumps(response).encode()
                 case CHANNELS.CONTROL:
+                    print("Got CONTROL message")
                     response = HandleControl(event.packet.data)
+                    response = json.dumps(response).encode()
                 case CHANNELS.STATS:
+                    # print("Got STATS message")
                     response = HandleStats(event.packet.data)
+                    response = json.dumps(response).encode()
                 case CHANNELS.VIDEO:
                     response = HandleVideo(event.packet.data)
                     flags = enet.PACKET_FLAG_UNRELIABLE_FRAGMENT | enet.PACKET_FLAG_UNSEQUENCED
 
     if response:
+        # print("sending response", response)
         event.peer.send(channel, enet.Packet(response, flags))
+
 
 
 def main() -> None:
     LoadSettings()
     RegisterForHolepunch()
-    Service()
+    while True:
+        Service()
 
 
 main()
