@@ -18,6 +18,7 @@ class ERROR(enum.IntEnum):
     TEMP_MINMAX = enum.auto()
     PH_MINMAX = enum.auto()
     FEED_ERROR = enum.auto()
+    SAVE_ERROR = enum.auto()
 
 
 class MESSAGE(enum.IntEnum):

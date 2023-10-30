@@ -20,7 +20,8 @@ enum ERROR {
 	INVALID_LENGTH,
 	TEMP_MINMAX,
 	PH_MINMAX,
-	FEED_ERROR
+	FEED_ERROR,
+	SAVE_ERROR
 }
 
 enum MESSAGE {
@@ -134,8 +135,17 @@ func ProcessControl(bytes:PackedByteArray):
 	match message['message_type'] as MESSAGE:
 		MESSAGE.GET_SETTINGS:
 			$HBoxContainer/SettingsPanel.UpdateSettings(message)
-	
-	pass
+		
+		MESSAGE.SAVE_SETTINGS:
+			var e:ERROR = message['error']
+			var modal := AcceptDialog.new()
+			if e == ERROR.OK:
+				modal.title = "Success"
+				modal.set_text("Saved successfully")
+			else:
+				modal.title = "Error"
+				modal.set_text(str(e))
+			modal.popup_exclusive_centered(get_tree().root)
 
 
 func ProcessStats(bytes:PackedByteArray):
@@ -204,6 +214,7 @@ func _on_home_pressed():
 	$HBoxContainer/SidePanel/VBoxContainer/Settings.disabled = false
 	$HBoxContainer/SidePanel/VBoxContainer/Home.disabled = true
 
+
 # Enable the settings pannel and disable all others
 func _on_settings_pressed():
 	homePanel.visible = false
@@ -220,6 +231,8 @@ func _on_connect_pressed():
 	$HBoxContainer/HomePanel/VBoxContainer/IP/Value.text = peer[0] + ":" + str(peer[1])
 	$HBoxContainer/SidePanel/VBoxContainer/Connect.disabled = true
 	$HBoxContainer/SidePanel/VBoxContainer/Disconnect.disabled = false
+	_on_settings_refresh_pressed()
+
 
 func _on_disconnect_pressed():
 	$HBoxContainer/HomePanel/VBoxContainer/IP/Label.text = "Not connected"
@@ -228,6 +241,7 @@ func _on_disconnect_pressed():
 	$HBoxContainer/SidePanel/VBoxContainer/Disconnect.disabled = true
 	if embeddedPeer:
 		embeddedPeer.peer_disconnect()
+
 
 func _on_stat_timer_timeout():
 	var packet:PackedByteArray = PackedByteArray([MESSAGE.GET_STATS])
@@ -239,6 +253,8 @@ func _on_settings_refresh_pressed():
 	embeddedPeer.send(CHANNEL.CONTROL, packet, ENetPacketPeer.FLAG_RELIABLE)
 
 
-# TODO(#14): Implement settings Apply button
 func _on_settings_apply_pressed():
-	pass # Replace with function body.
+	var d = $HBoxContainer/SettingsPanel.GetSettings()
+	d["message_type"] = MESSAGE.SAVE_SETTINGS
+	var packet = JSON.stringify(d).to_utf8_buffer()
+	embeddedPeer.send(CHANNEL.CONTROL, packet, ENetPacketPeer.FLAG_RELIABLE)
