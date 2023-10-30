@@ -223,7 +223,7 @@ def HandleVideo(message:bytes, use_demo:bool=True) -> bytes:
     return bytes(buffer)
 
 
-# TODO: RegisterForHolepunch()->None should probably be adapted into HandleHolepunch(bytes)->str, enable reconnection
+# TODO(#12): RegisterForHolepunch()->None should probably be adapted into HandleHolepunch(bytes)->str, enable reconnection
 def RegisterForHolepunch() -> None:
     print("registering...")
 
