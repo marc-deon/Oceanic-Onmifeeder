@@ -218,7 +218,7 @@ def HandleVideo(message:str, use_demo:bool=True) -> bytes:
     return bytes(buffer)
 
 
-# TODO: RegisterForHolepunch()->None should probably be adapted to HandleHolepunch(bytes)->str
+# TODO: RegisterForHolepunch()->None should probably be adapted into HandleHolepunch(bytes)->str
 def RegisterForHolepunch() -> None:
     print("registering...")
 
@@ -249,10 +249,20 @@ def RegisterForHolepunch() -> None:
         raise TimeoutError
 
     print("Done registering")
+    
 
 
 def HandleHolepunch(b:bytes) -> str:
-    raise NotImplemented()
+    message = b.decode().split(" ")
+    print("handling holepunch", message)
+    match message:
+        case ["EXPECT", addr, local, port, localport]:
+            enetHost.connect(enet.Address(addr, int(port)), channelCount=CHANNELS.MAX)
+            enetHost.connect(enet.Address(local, int(localport)), channelCount=CHANNELS.MAX)
+            print("expecting", addr, local, int(port), int(localport))
+        case _:
+            print("Unknown HP format")
+    return ""
 
 
 def Service() -> None:
@@ -268,18 +278,22 @@ def Service() -> None:
             channel = CHANNELS(event.channelID)
             match channel:
                 case CHANNELS.HOLEPUNCH:
+                    # print("Got channel", channel.name, "data", event.packet.data)
                     response = HandleHolepunch(event.packet.data)
-                    response = json.dumps(response).encode()
+                    #response = json.dumps(response).encode()
                 
                 case CHANNELS.CONTROL:
+                    # print("Got channel", channel.name, "data", event.packet.data)
                     response = HandleControl(event.packet.data)
                     response = json.dumps(response).encode()
                 
                 case CHANNELS.STATS:
+                    # print("Got channel", channel.name, "data", event.packet.data)
                     response = HandleStats(event.packet.data)
                     response = json.dumps(response).encode()
                 
                 case CHANNELS.VIDEO:
+                    # print("Got channel", channel.name, "data", event.packet.data)
                     response = HandleVideo(event.packet.data)
                     flags = enet.PACKET_FLAG_UNRELIABLE_FRAGMENT | enet.PACKET_FLAG_UNSEQUENCED
 

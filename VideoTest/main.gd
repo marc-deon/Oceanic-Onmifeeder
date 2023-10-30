@@ -164,14 +164,6 @@ func _process(delta):
 		RequestVideo()
 	
 	match event_type:
-		ENetConnection.EVENT_ERROR:
-			pass
-		ENetConnection.EVENT_DISCONNECT:
-			pass
-		ENetConnection.EVENT_NONE:
-			pass
-		ENetConnection.EVENT_CONNECT:
-			pass
 		ENetConnection.EVENT_RECEIVE:
 			var bytes = peer.get_packet()
 			
