@@ -1,7 +1,6 @@
 extends PanelContainer
 
 # TODO(#13): Disable certain settings when not connected to embedded
-
 func UpdateSettings(message:Dictionary):
 	var hours = message["feed_time"][0]
 	var minutes = message["feed_time"][1]
@@ -18,3 +17,12 @@ func UpdateSettings(message:Dictionary):
 	$VBoxContainer/TempWarning/Max.value = temp_max
 	$VBoxContainer/PhWarning/Min.value = ph_min
 	$VBoxContainer/PhWarning/Max.value = ph_max
+	
+
+func GetSettings() -> Dictionary:
+	return {
+	"feed_time":    [$VBoxContainer/FeedTime/Hours.value, $VBoxContainer/FeedTime/Minutes.value],
+	"feed_length":  $VBoxContainer/FeedLength/Length.value,
+	"temp_warning": [$VBoxContainer/TempWarning/Min.value, $VBoxContainer/TempWarning/Max.value],
+	"ph_warning":   [$VBoxContainer/PhWarning/Min.value, $VBoxContainer/PhWarning/Max.value]
+	}

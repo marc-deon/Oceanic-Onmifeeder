@@ -18,7 +18,7 @@ import imutils
 import json
 import random
 import servo_control
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
 from typing import List
 import socket_convenience as sc
 from enums import *
@@ -29,7 +29,7 @@ SERVER_PORT = 4800
 WEBCAM_WIDTH = 320
 
 
-@dataclass
+@dataclass()
 class Settings:
     # Keep these secret
     _username:str        = "poseidon"
@@ -44,6 +44,9 @@ class Settings:
     @property
     def hp_key(self):
         return self._username
+
+    def asdict(self) -> dict:
+        return asdict(self)
 
 enetHost:enet.Host = None
 
@@ -60,21 +63,32 @@ def LoadSettings(force_default=False) -> None:
 
     # Try load from file
     try:
-        with open("4800-settings.json") as f:
+        with open("4800-settings.json", 'r') as f:
             settings = Settings(**json.load(f))
     except:
         settings = Settings()
         print("Error: using default settings")
 
 
-def SaveSettings() -> bool:
+def SaveSettings(message) -> bool:
     """Save embedded settings to file"""
+    print("Saving settings...")
+    # Update according to message
+    settings.feed_time = message["feed_time"]
+    settings.feed_length = message["feed_length"]
+    settings.temp_warning = message["temp_warning"]
+    settings.ph_warning = message["ph_warning"]
+    print("  Updated struct")
+
     # Write to file
     try:
-        with open ("4800-settings.json") as f:
-            f.write(settings.asdict())
-    except:
+        with open ("4800-settings.json", 'w') as f:
+            f.write(json.dumps(settings.asdict(), indent=2))
+            print("  Wrote to file")
+    except Exception as e:
+        print("Save error", e)
         return False
+    print("Saved settings")
     return True
 
 
@@ -178,8 +192,10 @@ def HandleControl(message:bytes) -> dict:
 
         # Save settings
         case MESSAGE.SAVE_SETTINGS:
-            SaveSettings()
-            response = {'error':ERROR.OK}
+            if SaveSettings(message):
+                response = {'error':ERROR.OK, 'message_type':MESSAGE.SAVE_SETTINGS}
+            else:
+                response = {'error':ERROR.SAVE_ERROR, 'message_type':MESSAGE.SAVE_SETTINGS}
     
     return response
 
@@ -194,7 +210,7 @@ def HandleStats(message:bytes) -> dict:
 
 demo_vid = None
 # TODO(#9): Implement webcam streaming fully
-def HandleVideo(message:bytes, use_demo:bool=True) -> bytes:
+def HandleVideo(message:bytes, use_demo:bool=False) -> bytes:
     """Capture a video frame from the webcam and prepare it to be send to the app"""
     global demo_vid
 
@@ -203,7 +219,11 @@ def HandleVideo(message:bytes, use_demo:bool=True) -> bytes:
             demo_vid = cv2.VideoCapture("take_it_yeesy.mp4")
         vid = demo_vid
     else:
-         vid = cv2.VideoCapture(0)
+        if not demo_vid:
+            demo_vid = cv2.VideoCapture(0) # RPI webcam
+            demo_vid.set(cv2.CAP_PROP_FPS, 30)
+            demo_vid.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+        vid = demo_vid
 
     # Read next frame
     nextFrameValid, frame = vid.read()
