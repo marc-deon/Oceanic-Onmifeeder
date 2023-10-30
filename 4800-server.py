@@ -15,7 +15,7 @@ def enet_main():
 
     enetHost = enet.Host(enet.Address(None, HOST_PORT), peerCount=32)
     while True:
-        event = enetHost.service(1000)
+        event = enetHost.service(10000)
 
         match event.type:
             case enet.EVENT_TYPE_RECEIVE:
