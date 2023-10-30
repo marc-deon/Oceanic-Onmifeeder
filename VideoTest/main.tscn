@@ -1,7 +1,8 @@
-[gd_scene load_steps=7 format=3 uid="uid://dpmw1n0onhdkf"]
+[gd_scene load_steps=8 format=3 uid="uid://dpmw1n0onhdkf"]
 
 [ext_resource type="Texture2D" uid="uid://c8nh38nw53ual" path="res://demo.png" id="1_j84c0"]
 [ext_resource type="Script" path="res://main.gd" id="1_wfqsr"]
+[ext_resource type="Texture2D" uid="uid://cxh1i2f5w3chh" path="res://Hamburger_icon.svg" id="2_m6ch3"]
 [ext_resource type="Script" path="res://CameraDisplay.gd" id="3_te02d"]
 [ext_resource type="Script" path="res://SettingsPanel.gd" id="4_6mowx"]
 
@@ -28,26 +29,31 @@ layout_mode = 2
 [node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer/SidePanel"]
 layout_mode = 2
 
-[node name="Hamburger" type="Button" parent="HBoxContainer/SidePanel/VBoxContainer"]
+[node name="Hamburger" type="TextureButton" parent="HBoxContainer/SidePanel/VBoxContainer"]
 layout_mode = 2
 focus_mode = 0
 toggle_mode = true
-text = "三"
+texture_normal = ExtResource("2_m6ch3")
+stretch_mode = 3
 
 [node name="Home" type="Button" parent="HBoxContainer/SidePanel/VBoxContainer"]
+custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 text = "Home"
 
 [node name="Settings" type="Button" parent="HBoxContainer/SidePanel/VBoxContainer"]
+custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 text = "Settings"
 
 [node name="Connect" type="Button" parent="HBoxContainer/SidePanel/VBoxContainer"]
+custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 focus_mode = 0
 text = "Connect"
 
 [node name="Disconnect" type="Button" parent="HBoxContainer/SidePanel/VBoxContainer"]
+custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 focus_mode = 0
 disabled = true
