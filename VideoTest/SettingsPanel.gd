@@ -1,6 +1,6 @@
 extends PanelContainer
 
-# TODO: Disable certain settings when not connected to embedded
+# TODO(#13): Disable certain settings when not connected to embedded
 
 func UpdateSettings(message:Dictionary):
 	var hours = message["feed_time"][0]
