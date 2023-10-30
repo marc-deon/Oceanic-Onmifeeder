@@ -30,6 +30,7 @@ layout_mode = 2
 
 [node name="Hamburger" type="Button" parent="HBoxContainer/SidePanel/VBoxContainer"]
 layout_mode = 2
+focus_mode = 0
 toggle_mode = true
 text = "三"
 
@@ -43,10 +44,13 @@ text = "Settings"
 
 [node name="Connect" type="Button" parent="HBoxContainer/SidePanel/VBoxContainer"]
 layout_mode = 2
+focus_mode = 0
 text = "Connect"
 
 [node name="Disconnect" type="Button" parent="HBoxContainer/SidePanel/VBoxContainer"]
 layout_mode = 2
+focus_mode = 0
+disabled = true
 text = "Disconnect"
 
 [node name="Empty" type="Control" parent="HBoxContainer/SidePanel/VBoxContainer"]

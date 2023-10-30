@@ -201,12 +201,15 @@ func _on_hamburger_toggled(button_pressed):
 func _on_home_pressed():
 	homePanel.visible = true
 	settingsPanel.visible = false
-
+	$HBoxContainer/SidePanel/VBoxContainer/Settings.disabled = false
+	$HBoxContainer/SidePanel/VBoxContainer/Home.disabled = true
 
 # Enable the settings pannel and disable all others
 func _on_settings_pressed():
 	homePanel.visible = false
 	settingsPanel.visible = true
+	$HBoxContainer/SidePanel/VBoxContainer/Settings.disabled = true
+	$HBoxContainer/SidePanel/VBoxContainer/Home.disabled = false
 
 
 func _on_connect_pressed():
@@ -215,11 +218,16 @@ func _on_connect_pressed():
 	var peer = ConnectToPeerEnet()
 	$HBoxContainer/HomePanel/VBoxContainer/IP/Label.text = "Connected to: "
 	$HBoxContainer/HomePanel/VBoxContainer/IP/Value.text = peer[0] + ":" + str(peer[1])
+	$HBoxContainer/SidePanel/VBoxContainer/Connect.disabled = true
+	$HBoxContainer/SidePanel/VBoxContainer/Disconnect.disabled = false
 
 func _on_disconnect_pressed():
 	$HBoxContainer/HomePanel/VBoxContainer/IP/Label.text = "Not connected"
 	$HBoxContainer/HomePanel/VBoxContainer/IP/Value.text = ""
-	embeddedPeer.peer_disconnect()
+	$HBoxContainer/SidePanel/VBoxContainer/Connect.disabled = false
+	$HBoxContainer/SidePanel/VBoxContainer/Disconnect.disabled = true
+	if embeddedPeer:
+		embeddedPeer.peer_disconnect()
 
 func _on_stat_timer_timeout():
 	var packet:PackedByteArray = PackedByteArray([MESSAGE.GET_STATS])
