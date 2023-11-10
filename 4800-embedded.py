@@ -1,4 +1,4 @@
-#! /usr/bin/env python3
+#! /usr/bin/env python3.12
 
 ################################################################################
 ## 4800-embedded.py
@@ -24,7 +24,7 @@ import socket_convenience as sc
 from enums import *
 
 
-SERVER_IP = '4800.highlyderivative.games'
+SERVER_IP = 'highlyderivative.games'
 SERVER_PORT = 4800
 WEBCAM_WIDTH = 320
 
@@ -209,7 +209,7 @@ def HandleStats(message:bytes) -> dict:
 
 
 demo_vid = None
-def HandleVideo(message:bytes, use_demo:bool=False) -> bytes:
+def HandleVideo(message:bytes, use_demo:bool=True) -> bytes:
     """Capture a video frame from the webcam and prepare it to be send to the app"""
     global demo_vid
 
