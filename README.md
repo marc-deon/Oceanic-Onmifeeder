@@ -1,3 +1,11 @@
+# Dependancies
+- Python 3.10 or higher
+- pyenet, from source: https://github.com/aresch/pyenet
+- schedule: https://pypi.org/project/schedule/
+- opencv: https://pypi.org/project/opencv-python/
+- imutils: https://pypi.org/project/imutils/
+
+# Project Structure
 At the moment there are three-ish projects in here, each with multiple parts.
 
 1. The main Python files
