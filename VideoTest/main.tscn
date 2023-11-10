@@ -148,5 +148,7 @@ layout_mode = 2
 [connection signal="pressed" from="HBoxContainer/SidePanel/VBoxContainer/Connect" to="." method="_on_connect_pressed"]
 [connection signal="pressed" from="HBoxContainer/SidePanel/VBoxContainer/Disconnect" to="." method="_on_disconnect_pressed"]
 [connection signal="pressed" from="HBoxContainer/HomePanel/VBoxContainer/FeedButton" to="." method="_on_feed_button_pressed"]
+[connection signal="apply_remote" from="HBoxContainer/SettingsPanel" to="." method="_on_settings_remote_apply_pressed"]
 [connection signal="language_updated" from="HBoxContainer/SettingsPanel" to="." method="ChangeLocale"]
+[connection signal="reset_remote" from="HBoxContainer/SettingsPanel" to="." method="RefreshSettings"]
 [connection signal="timeout" from="Timers/StatTimer" to="." method="_on_stat_timer_timeout"]

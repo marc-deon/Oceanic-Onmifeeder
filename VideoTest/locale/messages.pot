@@ -167,3 +167,13 @@ msgstr ""
 
 msgid "Not connected!"
 msgstr ""
+
+msgid "SECONDS_TIME"
+msgid_plural ""
+msgstr ""
+
+msgid "Remote Settings"
+msgstr ""
+
+msgid "Local Settings"
+msgstr ""

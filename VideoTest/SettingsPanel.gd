@@ -1,5 +1,7 @@
 extends PanelContainer
 signal language_updated(locale:String)
+signal apply_remote
+signal reset_remote
 
 # TODO(#13): Disable certain settings when not connected to embedded
 func UpdateSettings(message:Dictionary):
@@ -11,23 +13,52 @@ func UpdateSettings(message:Dictionary):
 	var ph_min = message["ph_warning"][0]
 	var ph_max = message["ph_warning"][1]
 	
-	$VBoxContainer/FeedTime/Hours.value = hours
-	$VBoxContainer/FeedTime/Minutes.value = minutes
-	$VBoxContainer/FeedLength/Length.value = length
-	$VBoxContainer/TempWarning/Min.value = temp_min
-	$VBoxContainer/TempWarning/Max.value = temp_max
-	$VBoxContainer/PhWarning/Min.value = ph_min
-	$VBoxContainer/PhWarning/Max.value = ph_max
+	$"Tabs/Remote Settings/List/FeedTime/Hours".value = hours
+	$"Tabs/Remote Settings/List/FeedTime/Minutes".value = minutes
+	$"Tabs/Remote Settings/List/FeedLength/Length".value = length
+	$"Tabs/Remote Settings/List/TempWarning/Min".value = temp_min
+	$"Tabs/Remote Settings/List/TempWarning/Max".value = temp_max
+	$"Tabs/Remote Settings/List/PhWarning/Min".value = ph_min
+	$"Tabs/Remote Settings/List/PhWarning/Max".value = ph_max
 	
 
 func GetSettings() -> Dictionary:
 	return {
-	"feed_time":    [$VBoxContainer/FeedTime/Hours.value, $VBoxContainer/FeedTime/Minutes.value],
-	"feed_length":  $VBoxContainer/FeedLength/Length.value,
-	"temp_warning": [$VBoxContainer/TempWarning/Min.value, $VBoxContainer/TempWarning/Max.value],
-	"ph_warning":   [$VBoxContainer/PhWarning/Min.value, $VBoxContainer/PhWarning/Max.value]
+	"feed_time":    [$"Tabs/Remote Settings/List/FeedTime/Hours".value, $"Tabs/Remote Settings/List/FeedTime/Minutes".value],
+	"feed_length":  $"Tabs/Remote Settings/List/FeedLength/Length".value,
+	"temp_warning": [$"Tabs/Remote Settings/List/TempWarning/Min".value, $"Tabs/Remote Settings/List/TempWarning/Max".value],
+	"ph_warning":   [$"Tabs/Remote Settings/List/PhWarning/Min".value, $"Tabs/Remote Settings/PhWarning/Max".value]
 	}
+
+
+func SetRemote(connected:bool):
+	$"Tabs/Remote Settings/List/FeedTime/Hours".editable = connected
+	$"Tabs/Remote Settings/List/FeedTime/Minutes".editable = connected
+	$"Tabs/Remote Settings/List/FeedLength/Length".editable = connected
+	$"Tabs/Remote Settings/List/TempWarning/Min".editable = connected
+	$"Tabs/Remote Settings/List/TempWarning/Max".editable = connected
+	$"Tabs/Remote Settings/List/PhWarning/Min".editable = connected
+	$"Tabs/Remote Settings/List/PhWarning/Max".editable = connected
+
 
 const _languages := ["en_US", "ja", "eo"]
 func _on_language_updated(index):
 	language_updated.emit(_languages[index])
+	var widget = $"Tabs/Remote Settings/List/FeedLength/Length"
+	widget.suffix = tr_n("SECONDS_TIME", "", widget.value)
+
+func _on_save_local_pressed():
+	pass # Replace with function body.
+
+
+func _on_apply_remote_pressed():
+	apply_remote.emit()
+
+
+func _on_reset_remote_pressed():
+	reset_remote.emit()
+
+
+func _on_feed_length_value_changed(value):
+	$"Tabs/Remote Settings/List/FeedLength/Length".suffix = tr_n("SECONDS_TIME", "", value)
+	pass # Replace with function body.

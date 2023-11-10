@@ -126,6 +126,7 @@ func ProcessControl(type_peer_data_channel:Array):
 	
 	match message['message_type'] as MESSAGE:
 		MESSAGE.GET_SETTINGS:
+			print("got settings")
 			$HBoxContainer/SettingsPanel.UpdateSettings(message)
 		
 		MESSAGE.SAVE_SETTINGS:
@@ -259,21 +260,15 @@ func _on_settings_pressed():
 
 func _on_connect_success(ip:String, port:int):
 	$Timers/StatTimer.start()
+	RefreshSettings()
 	display_ip(ip, port)
-	_on_settings_refresh_pressed()
 
 
 func SetRemote(connected:bool):
 	$HBoxContainer/SidePanel/VBoxContainer/Connect.disabled = connected
 	$HBoxContainer/SidePanel/VBoxContainer/Disconnect.disabled = not connected
 	
-	$HBoxContainer/SettingsPanel/VBoxContainer/FeedTime/Hours.editable = connected
-	$HBoxContainer/SettingsPanel/VBoxContainer/FeedTime/Minutes.editable = connected
-	$HBoxContainer/SettingsPanel/VBoxContainer/FeedLength/Length.editable = connected
-	$HBoxContainer/SettingsPanel/VBoxContainer/TempWarning/Min.editable = connected
-	$HBoxContainer/SettingsPanel/VBoxContainer/TempWarning/Max.editable = connected
-	$HBoxContainer/SettingsPanel/VBoxContainer/PhWarning/Min.editable = connected
-	$HBoxContainer/SettingsPanel/VBoxContainer/PhWarning/Max.editable = connected
+	$HBoxContainer/SettingsPanel.SetRemote(connected)
 
 
 func _on_connect_pressed():
@@ -293,12 +288,12 @@ func _on_stat_timer_timeout():
 		embeddedPeer.send(CHANNEL.STATS, packet, ENetPacketPeer.FLAG_RELIABLE)
 
 
-func _on_settings_refresh_pressed():
+func RefreshSettings():
 	var packet = JSON.stringify({"message_type":MESSAGE.GET_SETTINGS}).to_utf8_buffer()
 	embeddedPeer.send(CHANNEL.CONTROL, packet, ENetPacketPeer.FLAG_RELIABLE)
 
 
-func _on_settings_apply_pressed():
+func _on_settings_remote_apply_pressed():
 	var d = $HBoxContainer/SettingsPanel.GetSettings()
 	d["message_type"] = MESSAGE.SAVE_SETTINGS
 	var packet = JSON.stringify(d).to_utf8_buffer()
@@ -311,7 +306,7 @@ func _on_feed_button_pressed():
 		var packet = JSON.stringify({"message_type": MESSAGE.MANUAL_FEED}).to_utf8_buffer()
 		embeddedPeer.send(CHANNEL.CONTROL, packet, ENetPacketPeer.FLAG_RELIABLE)
 	else:
-		$HBoxContainer/HomePanel/VBoxContainer/FadeLabel.fade_in("Not connected!")
+		$HBoxContainer/HomePanel/VBoxContainer/FadeLabel.fade_in("Not connected!", Color.RED)
 
 
 func display_ip(ip:String="", port:int=0):
