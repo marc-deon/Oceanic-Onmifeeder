@@ -1,10 +1,11 @@
-[gd_scene load_steps=8 format=3 uid="uid://dpmw1n0onhdkf"]
+[gd_scene load_steps=9 format=3 uid="uid://dpmw1n0onhdkf"]
 
 [ext_resource type="Texture2D" uid="uid://c8nh38nw53ual" path="res://demo.png" id="1_j84c0"]
 [ext_resource type="Script" path="res://main.gd" id="1_wfqsr"]
 [ext_resource type="Texture2D" uid="uid://cxh1i2f5w3chh" path="res://Hamburger_icon.svg" id="2_m6ch3"]
 [ext_resource type="Script" path="res://CameraDisplay.gd" id="3_te02d"]
 [ext_resource type="Script" path="res://SettingsPanel.gd" id="4_6mowx"]
+[ext_resource type="PackedScene" uid="uid://mcfhr3opdp2j" path="res://FadeLabel.tscn" id="5_3btmq"]
 
 [sub_resource type="ImageTexture" id="ImageTexture_o0wrb"]
 
@@ -140,6 +141,9 @@ text = "12:12, January 1, 2012"
 [node name="FeedButton" type="Button" parent="HBoxContainer/HomePanel/VBoxContainer"]
 layout_mode = 2
 text = "Feed Now"
+
+[node name="FadeLabel" parent="HBoxContainer/HomePanel/VBoxContainer" instance=ExtResource("5_3btmq")]
+layout_mode = 2
 
 [node name="SettingsPanel" type="PanelContainer" parent="HBoxContainer"]
 layout_mode = 2

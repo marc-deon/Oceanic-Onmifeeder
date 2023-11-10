@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3 uid="uid://mcfhr3opdp2j"]
+
+[ext_resource type="Script" path="res://FadeLabel.gd" id="1_rb3y4"]
+
+[node name="FadeLabel" type="Label"]
+text = "Message"
+horizontal_alignment = 1
+script = ExtResource("1_rb3y4")

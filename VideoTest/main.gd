@@ -150,14 +150,11 @@ func ProcessControl(bytes:PackedByteArray):
 
 		MESSAGE.MANUAL_FEED:
 			var e:ERROR = message['error']
-			var modal := AcceptDialog.new()
+#			var modal := AcceptDialog.new()
 			if e == ERROR.OK:
-				modal.title = "Success"
-				modal.set_text("Fed successfully")
+				$HBoxContainer/HomePanel/VBoxContainer/FadeLabel.fade_in("Fed successfully!", Color.GREEN)
 			else:
-				modal.title = "Feed Error"
-				modal.set_text(str(e))
-			modal.popup_exclusive_centered(get_tree().root)
+				$HBoxContainer/HomePanel/VBoxContainer/FadeLabel.fade_in("Feed error!", Color.RED)
 
 const MONTHS := ["January","February","March","April","May","June","July","August","September","October","November","December"]
 
@@ -172,7 +169,7 @@ func ProcessStats(bytes:PackedByteArray):
 			$HBoxContainer/HomePanel/VBoxContainer/Ph/Value.text = "%2.1f" % message['ph']
 			var t = message["last_feed"]
 			# HH:MM, Month Day, Year
-			$HBoxContainer/HomePanel/VBoxContainer/LastFeed/Value.text = "%d:%d, %s %d, %4d" % [t[3], t[4], MONTHS[t[2]], t[1], t[0]]
+			$HBoxContainer/HomePanel/VBoxContainer/LastFeed/Value.text = "%d:%d, %s %d, %4d" % [t[3], t[4], MONTHS[t[2]-1], t[1], t[0]]
 
 
 func ProcessVideo(bytes:PackedByteArray):
@@ -277,5 +274,6 @@ func _on_settings_apply_pressed():
 
 
 func _on_feed_button_pressed():
+	$HBoxContainer/HomePanel/VBoxContainer/FadeLabel.fade_in("Feeding...")
 	var packet = JSON.stringify({"message_type": MESSAGE.MANUAL_FEED}).to_utf8_buffer()
 	embeddedPeer.send(CHANNEL.CONTROL, packet, ENetPacketPeer.FLAG_RELIABLE)
