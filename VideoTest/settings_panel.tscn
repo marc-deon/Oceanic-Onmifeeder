@@ -13,8 +13,10 @@ script = ExtResource("1_28uus")
 [node name="Tabs" type="TabContainer" parent="."]
 layout_mode = 2
 clip_tabs = false
+use_hidden_tabs_for_min_size = true
 
 [node name="Remote Settings" type="MarginContainer" parent="Tabs"]
+visible = false
 layout_mode = 2
 theme_override_constants/margin_left = 10
 theme_override_constants/margin_top = 10
@@ -160,7 +162,6 @@ text = "Apply
 "
 
 [node name="Local Settings" type="MarginContainer" parent="Tabs"]
-visible = false
 layout_mode = 2
 theme_override_constants/margin_left = 10
 theme_override_constants/margin_top = 10
@@ -191,6 +192,44 @@ popup/item_1/id = 1
 popup/item_2/text = "Esperanto"
 popup/item_2/id = 2
 
+[node name="TimeFormat" type="HBoxContainer" parent="Tabs/Local Settings/List"]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="Tabs/Local Settings/List/TimeFormat"]
+layout_mode = 2
+size_flags_horizontal = 7
+text = "Time Format"
+
+[node name="ItemList" type="OptionButton" parent="Tabs/Local Settings/List/TimeFormat"]
+layout_mode = 2
+size_flags_horizontal = 3
+item_count = 2
+selected = 0
+popup/item_0/text = "12 Hour"
+popup/item_0/id = 0
+popup/item_1/text = "24 Hour"
+popup/item_1/id = 1
+
+[node name="TempFormat" type="HBoxContainer" parent="Tabs/Local Settings/List"]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="Tabs/Local Settings/List/TempFormat"]
+layout_mode = 2
+size_flags_horizontal = 7
+text = "Temperature Format"
+
+[node name="ItemList" type="OptionButton" parent="Tabs/Local Settings/List/TempFormat"]
+layout_mode = 2
+size_flags_horizontal = 3
+item_count = 2
+selected = 0
+popup/item_0/text = "Fahrenheit"
+popup/item_0/id = 0
+popup/item_1/text = "Celsius"
+popup/item_1/id = 1
+
 [node name="Spacer3" type="Control" parent="Tabs/Local Settings/List"]
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
@@ -209,11 +248,12 @@ text = "Refresh
 [node name="Save" type="Button" parent="Tabs/Local Settings/List/Buttons2"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Save
-"
+text = "Save"
 
 [connection signal="value_changed" from="Tabs/Remote Settings/List/FeedLength/Length" to="." method="_on_feed_length_value_changed"]
 [connection signal="pressed" from="Tabs/Remote Settings/List/Buttons/Reset" to="." method="_on_reset_remote_pressed"]
 [connection signal="pressed" from="Tabs/Remote Settings/List/Buttons/Apply" to="." method="_on_apply_remote_pressed"]
 [connection signal="item_selected" from="Tabs/Local Settings/List/Languages/ItemList" to="." method="_on_language_updated"]
+[connection signal="item_selected" from="Tabs/Local Settings/List/TimeFormat/ItemList" to="." method="on_time_format_updated"]
+[connection signal="item_selected" from="Tabs/Local Settings/List/TempFormat/ItemList" to="." method="on_temp_format_updated"]
 [connection signal="pressed" from="Tabs/Local Settings/List/Buttons2/Save" to="." method="_on_save_local_pressed"]

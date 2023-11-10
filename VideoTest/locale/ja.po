@@ -127,3 +127,24 @@ msgstr "遠い制定"
 
 msgid "Local Settings"
 msgstr "近い制定"
+
+msgid "Time Format"
+msgstr "時間のフォーマット"
+
+msgid "Temperature Format"
+msgstr "温度のフォーマット"
+
+msgid "12 Hour"
+msgstr "１２時間"
+
+msgid "24 Hour"
+msgstr "２４時間"
+
+msgid "Fahrenheit"
+msgstr "華氏温度"
+
+msgid "Celsius"
+msgstr "零度"
+
+msgid "Save"
+msgstr "セーブする"

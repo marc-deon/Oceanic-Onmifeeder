@@ -177,3 +177,24 @@ msgstr ""
 
 msgid "Local Settings"
 msgstr ""
+
+msgid "Time Format"
+msgstr ""
+
+msgid "Temperature Format"
+msgstr ""
+
+msgid "12 Hour"
+msgstr ""
+
+msgid "24 Hour"
+msgstr ""
+
+msgid "Fahrenheit"
+msgstr ""
+
+msgid "Celsius"
+msgstr ""
+
+msgid "Save"
+msgstr ""

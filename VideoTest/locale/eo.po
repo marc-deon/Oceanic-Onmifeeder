@@ -156,3 +156,24 @@ msgstr "Agordoj Foraj"
 
 msgid "Local Settings"
 msgstr "Agordoj Proksimaj"
+
+msgid "Time Format"
+msgstr "Formato de Tempo"
+
+msgid "Temperature Format"
+msgstr "Formato de Temperatuo"
+
+msgid "12 Hour"
+msgstr "12 Horoj"
+
+msgid "24 Hour"
+msgstr "24 Horoj"
+
+msgid "Fahrenheit"
+msgstr "Farenhejto"
+
+msgid "Celsius"
+msgstr "Celsiuso"
+
+msgid "Save"
+msgstr "Konservu"

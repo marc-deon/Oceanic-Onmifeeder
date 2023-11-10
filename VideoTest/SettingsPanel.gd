@@ -3,6 +3,9 @@ signal language_updated(locale:String)
 signal apply_remote
 signal reset_remote
 
+var use24Hour:bool
+var useCelsius:bool
+
 func UpdateSettings(message:Dictionary):
 	var hours = message["feed_time"][0]
 	var minutes = message["feed_time"][1]
@@ -62,3 +65,13 @@ func _on_reset_remote_pressed():
 func _on_feed_length_value_changed(value):
 	$"Tabs/Remote Settings/List/FeedLength/Length".suffix = tr_n("SECONDS_TIME", "", value)
 	pass # Replace with function body.
+
+
+func on_time_format_updated(index):
+	use24Hour = bool(index)
+	print("use24Hour ", use24Hour)
+
+
+func on_temp_format_updated(index):
+	useCelsius = bool(index)
+	print("useCelsius ", useCelsius)
