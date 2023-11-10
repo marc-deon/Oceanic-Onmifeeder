@@ -118,42 +118,107 @@ msgstr "Refresh\n"
 msgid "Apply\n"
 msgstr "Apply\n"
 
+msgctxt "numeric"
+msgid "MONTH_1"
+msgstr "1"
+
+msgctxt "full"
 msgid "MONTH_1"
 msgstr "January"
 
+msgctxt "numeric"
+msgid "MONTH_2"
+msgstr "2"
+
+msgctxt "full"
 msgid "MONTH_2"
 msgstr "February"
 
+msgctxt "numeric"
+msgid "MONTH_3"
+msgstr "3"
+
+msgctxt "full"
 msgid "MONTH_3"
 msgstr "March"
 
+msgctxt "numeric"
+msgid "MONTH_4"
+msgstr "4"
+
+msgctxt "full"
 msgid "MONTH_4"
 msgstr "April"
 
+msgctxt "numeric"
+msgid "MONTH_5"
+msgstr "5"
+
+msgctxt "full"
 msgid "MONTH_5"
 msgstr "May"
 
+msgctxt "numeric"
+msgid "MONTH_6"
+msgstr "6"
+
+msgctxt "full"
 msgid "MONTH_6"
 msgstr "June"
 
+msgctxt "numeric"
+msgid "MONTH_7"
+msgstr "7"
+
+msgctxt "full"
 msgid "MONTH_7"
 msgstr "July"
 
+msgctxt "numeric"
+msgid "MONTH_8"
+msgstr "8"
+
+msgctxt "full"
 msgid "MONTH_8"
 msgstr "August"
 
+msgctxt "numeric"
+msgid "MONTH_9"
+msgstr "9"
+
+msgctxt "full"
 msgid "MONTH_9"
 msgstr "September"
 
+msgctxt "numeric"
+msgid "MONTH_10"
+msgstr "10"
+
+msgctxt "full"
 msgid "MONTH_10"
 msgstr "October"
 
+msgctxt "numeric"
+msgid "MONTH_11"
+msgstr "11"
+
+msgctxt "full"
 msgid "MONTH_11"
 msgstr "November"
 
+msgctxt "numeric"
+msgid "MONTH_12"
+msgstr "12"
+
+msgctxt "full"
 msgid "MONTH_12"
 msgstr "December"
 
+msgctxt "full"
+msgid "DATE_TIME_FORMAT"
+msgstr "{HOUR}:{MINUTE} {AMPM}, {MONTH} {DAY}, {YEAR}"
+
+msgctxt "numeric"
 msgid "DATE_TIME_FORMAT"
 msgstr "{HOUR}:{MINUTE} {AMPM}, {MONTH}/{DAY}/{YEAR}"
 
@@ -162,3 +227,8 @@ msgstr "Feeding..."
 
 msgid "Not connected!"
 msgstr ""
+
+msgid "SECONDS_TIME"
+msgid_plural ""
+msgstr[0] "second"
+msgstr[1] "seconds"
