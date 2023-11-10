@@ -3,7 +3,6 @@ signal language_updated(locale:String)
 signal apply_remote
 signal reset_remote
 
-# TODO(#13): Disable certain settings when not connected to embedded
 func UpdateSettings(message:Dictionary):
 	var hours = message["feed_time"][0]
 	var minutes = message["feed_time"][1]
@@ -20,7 +19,7 @@ func UpdateSettings(message:Dictionary):
 	$"Tabs/Remote Settings/List/TempWarning/Max".value = temp_max
 	$"Tabs/Remote Settings/List/PhWarning/Min".value = ph_min
 	$"Tabs/Remote Settings/List/PhWarning/Max".value = ph_max
-	
+
 
 func GetSettings() -> Dictionary:
 	return {
@@ -46,6 +45,7 @@ func _on_language_updated(index):
 	language_updated.emit(_languages[index])
 	var widget = $"Tabs/Remote Settings/List/FeedLength/Length"
 	widget.suffix = tr_n("SECONDS_TIME", "", widget.value)
+
 
 func _on_save_local_pressed():
 	pass # Replace with function body.
