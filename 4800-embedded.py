@@ -305,7 +305,7 @@ def HandleHolepunch(b:bytes) -> str:
 
 def Service() -> None:
     """Main loop"""
-
+    schedule.run_pending()
     event = enetHost.service(500)
     response:bytes = None             # What we will respond with, if anything
     channel:int = None                # What channel to send the response on
