@@ -37,7 +37,7 @@ enum MESSAGE {
 	SAVE_SETTINGS
 }
 
-const hp_addr := "4800.highlyderivative.games"
+const hp_addr := "highlyderivative.games"
 const hp_port := 4800
 var hp_key    := "poseidon"
 
@@ -95,6 +95,7 @@ func ConnectToPeerEnet() -> Array:
 					
 					# Try to connect once over internet
 					tentativePeerAddr = addr
+					
 					enetConnection.connect_to_host(addr, int(port))
 					# And again over local network
 					tentativeLocalPeerAddr = local
@@ -143,10 +144,22 @@ func ProcessControl(bytes:PackedByteArray):
 				modal.title = "Success"
 				modal.set_text("Saved successfully")
 			else:
-				modal.title = "Error"
+				modal.title = "Setting Save Error"
 				modal.set_text(str(e))
 			modal.popup_exclusive_centered(get_tree().root)
 
+		MESSAGE.MANUAL_FEED:
+			var e:ERROR = message['error']
+			var modal := AcceptDialog.new()
+			if e == ERROR.OK:
+				modal.title = "Success"
+				modal.set_text("Fed successfully")
+			else:
+				modal.title = "Feed Error"
+				modal.set_text(str(e))
+			modal.popup_exclusive_centered(get_tree().root)
+
+const MONTHS := ["January","February","March","April","May","June","July","August","September","October","November","December"]
 
 func ProcessStats(bytes:PackedByteArray):
 	var message:Dictionary = JSON.parse_string(bytes.get_string_from_utf8())
@@ -157,6 +170,9 @@ func ProcessStats(bytes:PackedByteArray):
 		MESSAGE.GET_STATS:
 			$HBoxContainer/HomePanel/VBoxContainer/Temperature/Value.text = "%2.1f˚" % message['temp']
 			$HBoxContainer/HomePanel/VBoxContainer/Ph/Value.text = "%2.1f" % message['ph']
+			var t = message["last_feed"]
+			# HH:MM, Month Day, Year
+			$HBoxContainer/HomePanel/VBoxContainer/LastFeed/Value.text = "%d:%d, %s %d, %4d" % [t[3], t[4], MONTHS[t[2]], t[1], t[0]]
 
 
 func ProcessVideo(bytes:PackedByteArray):
@@ -170,7 +186,7 @@ func RequestVideo():
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
-	if not embeddedPeer:
+	if not embeddedPeer or (embeddedPeer.get_state() != embeddedPeer.PeerState.STATE_CONNECTED):
 		return
 	
 	var type_peer_data_channel = enetConnection.service(0)
@@ -257,4 +273,9 @@ func _on_settings_apply_pressed():
 	var d = $HBoxContainer/SettingsPanel.GetSettings()
 	d["message_type"] = MESSAGE.SAVE_SETTINGS
 	var packet = JSON.stringify(d).to_utf8_buffer()
+	embeddedPeer.send(CHANNEL.CONTROL, packet, ENetPacketPeer.FLAG_RELIABLE)
+
+
+func _on_feed_button_pressed():
+	var packet = JSON.stringify({"message_type": MESSAGE.MANUAL_FEED}).to_utf8_buffer()
 	embeddedPeer.send(CHANNEL.CONTROL, packet, ENetPacketPeer.FLAG_RELIABLE)
