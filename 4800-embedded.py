@@ -22,6 +22,8 @@ from dataclasses import dataclass, field, asdict
 from typing import List
 import socket_convenience as sc
 from enums import *
+import schedule
+from datetime import datetime
 
 
 SERVER_IP = 'highlyderivative.games'
@@ -35,7 +37,9 @@ class Settings:
     _username:str        = "poseidon"
     _salted_password:str = ""
 
+
     # Safe to give to app
+    last_feed: List[int]     = field(default_factory=lambda: [1980, 1, 1, 0, 0]) # year, month, day, hour, minute
     feed_time: List[int]     = field(default_factory=lambda: [8, 0]) # Time of day, hour and minute
     feed_length:float        = 1                                     # seconds
     temp_warning:List[float] = field(default_factory=lambda: [10, 99]) # low, high
@@ -92,11 +96,20 @@ def SaveSettings(message) -> bool:
     return True
 
 
+def UpdateSchedule():
+    schedule.clear()
+    time = f"{settings.feed_time[0]:02d}:{settings.feed_time[1]:02d}"
+    print(time)
+    schedule.every().day.at(time).do(FeedServo)
+
+
 # TODO(#7): Implement servo control
 def FeedServo() -> bool:
     """Open and close the feed door"""
     # if not empty?
-    return servo_control.Feed()
+    t = datetime.now()
+    settings.last_feed = [t.year, t.month, t.day, t.hour, t.minute]
+    return servo_control.Feed(settings.feed_length)
 
 
 def HandleControl(message:bytes) -> dict:
@@ -131,9 +144,9 @@ def HandleControl(message:bytes) -> dict:
         case MESSAGE.MANUAL_FEED:
             ok = FeedServo()
             if ok:
-                response = {'error':ERROR.OK}
+                response = {'error': ERROR.OK, "message_type": MESSAGE.MANUAL_FEED}
             else:
-                response = {'error': ERROR.FEED_ERROR}
+                response = {'error': ERROR.FEED_ERROR, "message_type": MESSAGE.MANUAL_FEED}
 
 
         # Set a daily feed time
@@ -150,6 +163,7 @@ def HandleControl(message:bytes) -> dict:
             else:
                 settings.feed_time = time
                 response = {'error':ERROR.OK}
+                UpdateSchedule()
 
 
         # Set how long the door should be open for feeding
@@ -205,7 +219,7 @@ def HandleStats(message:bytes) -> dict:
     """Return current temp, ph"""
     temp = random.randint(75, 80)
     ph =  7 + 2 * random.random() - 1
-    return {'message_type':MESSAGE.GET_STATS, 'error': ERROR.OK, 'temp': temp, 'ph': ph}
+    return {'message_type':MESSAGE.GET_STATS, 'error': ERROR.OK, 'temp': temp, 'ph': ph, 'last_feed': settings.last_feed}
 
 
 demo_vid = None
@@ -327,6 +341,7 @@ def Service() -> None:
 
 def main() -> None:
     LoadSettings()
+    UpdateSchedule() # Set initial schedule
     RegisterForHolepunch()
     while True:
         Service()
