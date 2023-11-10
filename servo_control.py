@@ -10,6 +10,7 @@ def _CloseFeedDoor() -> bool:
 
 def Feed(feed_time) -> bool:
     """Open and close the feeding door"""
+    print("feeding...")
     result = _OpenFeedDoor()
     if not result:
         return False
@@ -17,4 +18,5 @@ def Feed(feed_time) -> bool:
     sleep(feed_time)
 
     result = _CloseFeedDoor()
+    print("fed")
     return result
