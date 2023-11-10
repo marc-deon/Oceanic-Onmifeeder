@@ -1,0 +1,164 @@
+# LANGUAGE translation for VideoTest for the following files:
+# res://main.tscn
+#
+# FIRST AUTHOR < EMAIL @ADDRESS>, 2023.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: VideoTest\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: en_US\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: main.tscn
+msgid "Saved successfully"
+msgstr "Saved successfully"
+
+#: main.tscn
+msgid "Connected to: "
+msgstr "Connected to: {ip}:{port}"
+
+#: main.tscn
+msgid "Connecting..."
+msgstr "Connecting..."
+
+#: main.tscn
+msgid "..."
+msgstr "..."
+
+#: main.tscn
+msgid "Not connected"
+msgstr "Not connected"
+
+#: main.tscn
+msgid "Home"
+msgstr "Home"
+
+#: main.tscn
+msgid "Settings"
+msgstr "Settings"
+
+#: main.tscn
+msgid "Connect"
+msgstr "Connect"
+
+#: main.tscn
+msgid "Disconnect"
+msgstr "Disconnect"
+
+#: main.tscn
+msgid "Temperature"
+msgstr "Temperature"
+
+#: main.tscn
+msgid "00°"
+msgstr "00°"
+
+#: main.tscn
+msgid "pH"
+msgstr "pH"
+
+#: main.tscn
+msgid "14"
+msgstr "14"
+
+#: main.tscn
+msgid "Last feed"
+msgstr "Last feed"
+
+#: main.tscn
+msgid "Feed Now"
+msgstr "Feed Now"
+
+#: main.tscn
+msgid "Username (NYI)"
+msgstr "Username (NYI)"
+
+#: main.tscn
+msgid "asdasd"
+msgstr "asdasd"
+
+#: main.tscn
+msgid "Password (NYI)"
+msgstr "Password (NYI)"
+
+#: main.tscn
+msgid "Feed Time"
+msgstr "Feed Time"
+
+#: main.tscn
+msgid ":"
+msgstr ":"
+
+#: main.tscn
+msgid "Feed Length"
+msgstr "Feed Length"
+
+#: main.tscn
+msgid "Temperature Warning"
+msgstr "Temperature Warning"
+
+#: main.tscn
+msgid "pH Warning"
+msgstr "pH Warning"
+
+#: main.tscn
+msgid "Language"
+msgstr "Language"
+
+#: main.tscn
+msgid "Refresh\n"
+msgstr "Refresh\n"
+
+#: main.tscn
+msgid "Apply\n"
+msgstr "Apply\n"
+
+msgid "MONTH_1"
+msgstr "January"
+
+msgid "MONTH_2"
+msgstr "February"
+
+msgid "MONTH_3"
+msgstr "March"
+
+msgid "MONTH_4"
+msgstr "April"
+
+msgid "MONTH_5"
+msgstr "May"
+
+msgid "MONTH_6"
+msgstr "June"
+
+msgid "MONTH_7"
+msgstr "July"
+
+msgid "MONTH_8"
+msgstr "August"
+
+msgid "MONTH_9"
+msgstr "September"
+
+msgid "MONTH_10"
+msgstr "October"
+
+msgid "MONTH_11"
+msgstr "November"
+
+msgid "MONTH_12"
+msgstr "December"
+
+msgid "DATE_TIME_FORMAT"
+msgstr "{HOUR}:{MINUTE} {AMPM}, {MONTH}/{DAY}/{YEAR}"
+
+msgid "Feeding..."
+msgstr "Feeding..."
+
+msgid "Not connected!"
+msgstr ""

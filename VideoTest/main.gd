@@ -147,8 +147,6 @@ func ProcessControl(type_peer_data_channel:Array):
 			else:
 				$HBoxContainer/HomePanel/VBoxContainer/FadeLabel.fade_in("Feed error!", Color.RED)
 
-const MONTHS := ["January","February","March","April","May","June","July","August","September","October","November","December"]
-
 func ProcessStats(type_peer_data_channel:Array):
 	var bytes = type_peer_data_channel[1].get_packet()
 	var message:Dictionary = JSON.parse_string(bytes.get_string_from_utf8())
@@ -160,8 +158,28 @@ func ProcessStats(type_peer_data_channel:Array):
 			$HBoxContainer/HomePanel/VBoxContainer/Temperature/Value.text = "%2.1f˚" % message['temp']
 			$HBoxContainer/HomePanel/VBoxContainer/Ph/Value.text = "%2.1f" % message['ph']
 			var t = message["last_feed"]
-			# HH:MM, Month Day, Year
-			$HBoxContainer/HomePanel/VBoxContainer/LastFeed/Value.text = "%d:%d, %s %d, %4d" % [t[3], t[4], MONTHS[t[2]-1], t[1], t[0]]
+			
+			# Aside from the month, these are all numbers (we're ignoring AM/PM for now).
+			var year = t[0]
+			# THis gets the localized month, e.g. 10 -> October, or 10 -> Oktobro
+			var month = tr("MONTH_" + str(t[1]))
+			var day = t[2]
+			var hour = t[3]
+			var minute = t[4]
+			
+			# Good lord 12 hour time sucks ass. wtf?
+			var ampm = ""
+			if TranslationServer.get_locale() == "en_US":
+				ampm = "AM" if hour < 12 else "PM"
+				hour = int(hour) % 12
+				if hour == 0:
+					hour = 12
+			
+			# tr() fetches the apropriate format for the given locale,
+			# and .format supplies the apropriate substiutions
+			$HBoxContainer/HomePanel/VBoxContainer/LastFeed/Value.text =tr(
+				"DATE_TIME_FORMAT"
+				).format({ YEAR = year, MONTH = month, DAY = day, HOUR = hour, MINUTE = minute, AMPM = ampm })
 
 
 func ProcessVideo(type_peer_data_channel:Array):
@@ -242,22 +260,17 @@ func _on_connect_success():
 	$Timers/StatTimer.start()
 	var ip = embeddedPeer.get_remote_address()
 	var port = embeddedPeer.get_remote_port()
-	$HBoxContainer/HomePanel/VBoxContainer/IP/Label.text = "Connected to: "
-	$HBoxContainer/HomePanel/VBoxContainer/IP/Value.text = "%s:%d" % [ip, port]
-	$HBoxContainer/SidePanel/VBoxContainer/Connect.disabled = true
-	$HBoxContainer/SidePanel/VBoxContainer/Disconnect.disabled = false
+	display_ip()
 	_on_settings_refresh_pressed()
 
 
 func _on_connect_pressed():
 	ConnectToPeerEnet()
-	$HBoxContainer/HomePanel/VBoxContainer/IP/Label.text = "Connecting..."
-	$HBoxContainer/HomePanel/VBoxContainer/IP/Value.text = "..."
+	$HBoxContainer/HomePanel/VBoxContainer/IP.text = "Connecting..."
 
 
 func _on_disconnect_pressed():
-	$HBoxContainer/HomePanel/VBoxContainer/IP/Label.text = "Not connected"
-	$HBoxContainer/HomePanel/VBoxContainer/IP/Value.text = ""
+	$HBoxContainer/HomePanel/VBoxContainer/IP.text = "Not connected"
 	$HBoxContainer/SidePanel/VBoxContainer/Connect.disabled = false
 	$HBoxContainer/SidePanel/VBoxContainer/Disconnect.disabled = true
 	if embeddedPeer:
@@ -283,6 +296,28 @@ func _on_settings_apply_pressed():
 
 
 func _on_feed_button_pressed():
-	$HBoxContainer/HomePanel/VBoxContainer/FadeLabel.fade_in("Feeding...")
-	var packet = JSON.stringify({"message_type": MESSAGE.MANUAL_FEED}).to_utf8_buffer()
-	embeddedPeer.send(CHANNEL.CONTROL, packet, ENetPacketPeer.FLAG_RELIABLE)
+	if embeddedPeer:
+		$HBoxContainer/HomePanel/VBoxContainer/FadeLabel.fade_in("Feeding...")
+		var packet = JSON.stringify({"message_type": MESSAGE.MANUAL_FEED}).to_utf8_buffer()
+		embeddedPeer.send(CHANNEL.CONTROL, packet, ENetPacketPeer.FLAG_RELIABLE)
+	else:
+		$HBoxContainer/HomePanel/VBoxContainer/FadeLabel.fade_in("Not connected!")
+
+
+func display_ip():
+	if embeddedPeer:
+		var ip = embeddedPeer.get_remote_address()
+		var port = embeddedPeer.get_remote_port()
+		$HBoxContainer/HomePanel/VBoxContainer/IP.text = tr("Connected to: ").format({ip=ip, port=port})
+
+func _on_en_pressed():
+	TranslationServer.set_locale("en_US")
+	display_ip()
+
+func _on_jp_pressed():
+	TranslationServer.set_locale("ja")
+	display_ip()
+
+func _on_eo_pressed():
+	TranslationServer.set_locale("eo")
+	display_ip()

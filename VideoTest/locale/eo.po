@@ -1,0 +1,144 @@
+# LANGUAGE translation for VideoTest for the following files:
+# res://main.tscn
+#
+# FIRST AUTHOR < EMAIL @ADDRESS>, 2023.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: VideoTest\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: eo\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: main.tscn
+msgid "Saved successfully"
+msgstr "Konservis sukcese"
+
+#: main.tscn
+msgid "Connected to: "
+msgstr "Konektata al: {ip}:{port}"
+
+#: main.tscn
+msgid "Connecting..."
+msgstr "Konektanta"
+
+#: main.tscn
+msgid "..."
+msgstr "..."
+
+#: main.tscn
+msgid "Not connected"
+msgstr "Ne konektata"
+
+#: main.tscn
+msgid "Home"
+msgstr "Hejmo"
+
+#: main.tscn
+msgid "Settings"
+msgstr "Agordoj"
+
+#: main.tscn
+msgid "Connect"
+msgstr "Konektu"
+
+#: main.tscn
+msgid "Disconnect"
+msgstr "Malkonektu"
+
+#: main.tscn
+msgid "Temperature"
+msgstr "Temperaturo"
+
+#: main.tscn
+msgid "Last feed"
+msgstr "Lasta nutro"
+
+#: main.tscn
+msgid "Feed Now"
+msgstr "Nun nutru"
+
+#: main.tscn
+msgid "Username (NYI)"
+msgstr ""
+
+#: main.tscn
+msgid "Password (NYI)"
+msgstr ""
+
+#: main.tscn
+msgid "Feed Time"
+msgstr "Tempo de nutro"
+
+#: main.tscn
+msgid "Feed Length"
+msgstr "Longo de nutro"
+
+#: main.tscn
+msgid "Temperature Warning"
+msgstr "Averto de temperaturo"
+
+#: main.tscn
+msgid "pH Warning"
+msgstr "Averto de pH"
+
+#: main.tscn
+msgid "Language"
+msgstr "Lingvo"
+
+#: main.tscn
+msgid "Refresh\n"
+msgstr "Refreŝigu"
+
+#: main.tscn
+msgid "Apply\n"
+msgstr "Apliku" 
+
+msgid "MONTH_1"
+msgstr "Januaro"
+
+msgid "MONTH_2"
+msgstr "Februaro"
+
+msgid "MONTH_3"
+msgstr "Marto"
+
+msgid "MONTH_4"
+msgstr "Aprilo"
+
+msgid "MONTH_5"
+msgstr "Majo"
+
+msgid "MONTH_6"
+msgstr "Junio"
+
+msgid "MONTH_7"
+msgstr "Julio"
+
+msgid "MONTH_8"
+msgstr "Aŭgusto"
+
+msgid "MONTH_9"
+msgstr "Septembro"
+
+msgid "MONTH_10"
+msgstr "Oktobro"
+
+msgid "MONTH_11"
+msgstr "Novembro"
+
+msgid "MONTH_12"
+msgstr "Decembro"
+
+msgid "DATE_TIME_FORMAT"
+msgstr "{HOUR}:{MINUTE}, {YEAR} {MONTH} {DAY}"
+
+msgid "Feeding..."
+msgstr "Nutrantas..."
+
+msgid "Not connected!"
+msgstr ""

@@ -22,6 +22,13 @@ window/size/viewport_width=562
 window/size/viewport_height=1000
 window/handheld/orientation=1
 
+[internationalization]
+
+locale/translations=PackedStringArray("res://locale/eo.po", "res://locale/en_US.po", "res://locale/ja.po")
+locale/translations_pot_files=PackedStringArray("res://main.tscn")
+locale/test="eo"
+locale/fallback="en_US"
+
 [rendering]
 
 renderer/rendering_method="mobile"
