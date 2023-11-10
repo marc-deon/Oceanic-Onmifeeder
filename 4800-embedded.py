@@ -83,6 +83,7 @@ def SaveSettings(message) -> bool:
     settings.temp_warning = message["temp_warning"]
     settings.ph_warning = message["ph_warning"]
     print("  Updated struct")
+    UpdateSchedule()
 
     # Write to file
     try:
@@ -99,7 +100,6 @@ def SaveSettings(message) -> bool:
 def UpdateSchedule():
     schedule.clear()
     time = f"{settings.feed_time[0]:02d}:{settings.feed_time[1]:02d}"
-    print(time)
     schedule.every().day.at(time).do(FeedServo)
 
 
