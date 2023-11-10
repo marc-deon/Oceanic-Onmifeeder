@@ -1,4 +1,5 @@
 extends PanelContainer
+signal language_updated(locale:String)
 
 # TODO(#13): Disable certain settings when not connected to embedded
 func UpdateSettings(message:Dictionary):
@@ -26,3 +27,7 @@ func GetSettings() -> Dictionary:
 	"temp_warning": [$VBoxContainer/TempWarning/Min.value, $VBoxContainer/TempWarning/Max.value],
 	"ph_warning":   [$VBoxContainer/PhWarning/Min.value, $VBoxContainer/PhWarning/Max.value]
 	}
+
+const _languages := ["en_US", "ja", "eo"]
+func _on_language_updated(index):
+	language_updated.emit(_languages[index])

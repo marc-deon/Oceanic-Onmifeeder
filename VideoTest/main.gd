@@ -44,7 +44,6 @@ const hp_addr := "highlyderivative.games"
 const hp_port := 4800
 var hp_key    := "poseidon"
 
-var enetConnected:bool = false
 var enetConnection:ENetConnection = ENetConnection.new()
 var embeddedPeer:ENetPacketPeer
 
@@ -54,8 +53,7 @@ var conn_packet:PackedByteArray
 var tentativePeerAddr:String
 var tentativeLocalPeerAddr:String
 
-func ConnectToPeerEnet() -> void:
-	
+func ConnectToHolepunch() -> void:
 	# Connect to holepunch server
 	hpPeer = enetConnection.connect_to_host(hp_addr, hp_port)
 	print("connect to hp")
@@ -73,49 +71,51 @@ func _ready():
 	# Start with the home panel visible and the side panel minimized
 	_on_home_pressed()
 	_on_hamburger_toggled(true)
+	SetRemote(false)
 
 
 func ProcessHolepunch(type_peer_data_channel:Array):
 	var event_type:ENetConnection.EventType = type_peer_data_channel[0]
 	var peer:ENetPacketPeer = type_peer_data_channel[1]
 	
-	if event_type == ENetConnection.EVENT_CONNECT:
-		var peerAddr:String = peer.get_remote_address()
-		
-		# Connected to holepunch server successfully
-		if peerAddr == hpPeer.get_remote_address():
-			hpPeer = peer
-			hpPeer.send(CHANNEL.HOLEPUNCH, conn_packet, hpPeer.FLAG_RELIABLE)
-			print("sent conn packet")
-		
-		# Found a valid connection to embedded over local network
-		elif peerAddr == tentativeLocalPeerAddr:
-			embeddedPeer = peer
-			_on_connect_success()
-		
-		# Found a valid connection to embedded over internet
-		elif peerAddr == tentativePeerAddr:
-			embeddedPeer = peer
-			_on_connect_success()
-		
-		
-	elif event_type == ENetConnection.EVENT_RECEIVE:
-		var response := Array(peer.get_packet().get_string_from_utf8().split(" "))
-		match response:
-			["CONNTO", var addr, var local, var port, var localport]:
-				hpPeer.peer_disconnect()
-				
-				# Try to connect once over internet
-				tentativePeerAddr = addr
-				
-				enetConnection.connect_to_host(addr, int(port))
-				# And again over local network
-				tentativeLocalPeerAddr = local
-				enetConnection.connect_to_host(local, int(localport))
-				# We're done with the holepunch peer now
-			_:
-				print("unknown response ", response)
+	match event_type:
+		ENetConnection.EVENT_CONNECT:
+			var peerAddr:String = peer.get_remote_address()
+			
+			# Connected to holepunch server successfully
+			if peerAddr == hpPeer.get_remote_address():
+				hpPeer = peer
+				hpPeer.send(CHANNEL.HOLEPUNCH, conn_packet, hpPeer.FLAG_RELIABLE)
+				print("sent conn packet")
+			
+			# Found a valid connection to embedded over local network
+			elif peerAddr == tentativeLocalPeerAddr:
+				embeddedPeer = peer
+				connected.emit(peer.get_remote_address(), peer.get_remote_port())
+				SetRemote(true)
+			
+			# Found a valid connection to embedded over internet
+			elif peerAddr == tentativePeerAddr:
+				embeddedPeer = peer
+				connected.emit(peer.get_remote_address(), peer.get_remote_port())
+				SetRemote(true)
 
+
+		ENetConnection.EVENT_RECEIVE:
+			var response := Array(peer.get_packet().get_string_from_utf8().split(" "))
+			match response:
+				["CONNTO", var addr, var local, var port, var localport]:
+					hpPeer.peer_disconnect()
+					# Try to connect once over internet
+					tentativePeerAddr = addr
+					
+					enetConnection.connect_to_host(addr, int(port))
+					# And again over local network
+					tentativeLocalPeerAddr = local
+					enetConnection.connect_to_host(local, int(localport))
+					# We're done with the holepunch peer now
+				_:
+					print("unknown response ", response)
 
 
 func ProcessControl(type_peer_data_channel:Array):
@@ -146,6 +146,7 @@ func ProcessControl(type_peer_data_channel:Array):
 				$HBoxContainer/HomePanel/VBoxContainer/FadeLabel.fade_in("Fed successfully!", Color.GREEN)
 			else:
 				$HBoxContainer/HomePanel/VBoxContainer/FadeLabel.fade_in("Feed error!", Color.RED)
+
 
 func ProcessStats(type_peer_data_channel:Array):
 	var bytes = type_peer_data_channel[1].get_packet()
@@ -199,6 +200,7 @@ func _process(_delta):
 	var type_peer_data_channel = enetConnection.service(0)
 
 	var event_type:ENetConnection.EventType = type_peer_data_channel[0]
+	var peer:ENetPacketPeer = type_peer_data_channel[1]
 	var channel:CHANNEL = type_peer_data_channel[3]
 	
 	if $HBoxContainer/HomePanel/VBoxContainer/Camera.is_visible_in_tree():
@@ -222,9 +224,8 @@ func _process(_delta):
 			ProcessVideo(type_peer_data_channel)
 		
 		[ENetConnection.EVENT_DISCONNECT, _]:
-#			if embeddedPeer and not embeddedPeer.is_active():
-#				embeddedPeer = null
-			pass
+			if embeddedPeer and peer == embeddedPeer:
+				disconnected.emit()
 		
 		[ENetConnection.EVENT_NONE, _]:
 			pass
@@ -256,23 +257,32 @@ func _on_settings_pressed():
 	$HBoxContainer/SidePanel/VBoxContainer/Home.disabled = false
 
 
-func _on_connect_success():
+func _on_connect_success(ip:String, port:int):
 	$Timers/StatTimer.start()
-	var ip = embeddedPeer.get_remote_address()
-	var port = embeddedPeer.get_remote_port()
-	display_ip()
+	display_ip(ip, port)
 	_on_settings_refresh_pressed()
 
 
+func SetRemote(connected:bool):
+	$HBoxContainer/SidePanel/VBoxContainer/Connect.disabled = connected
+	$HBoxContainer/SidePanel/VBoxContainer/Disconnect.disabled = not connected
+	
+	$HBoxContainer/SettingsPanel/VBoxContainer/FeedTime/Hours.editable = connected
+	$HBoxContainer/SettingsPanel/VBoxContainer/FeedTime/Minutes.editable = connected
+	$HBoxContainer/SettingsPanel/VBoxContainer/FeedLength/Length.editable = connected
+	$HBoxContainer/SettingsPanel/VBoxContainer/TempWarning/Min.editable = connected
+	$HBoxContainer/SettingsPanel/VBoxContainer/TempWarning/Max.editable = connected
+	$HBoxContainer/SettingsPanel/VBoxContainer/PhWarning/Min.editable = connected
+	$HBoxContainer/SettingsPanel/VBoxContainer/PhWarning/Max.editable = connected
+
+
 func _on_connect_pressed():
-	ConnectToPeerEnet()
+	ConnectToHolepunch()
 	$HBoxContainer/HomePanel/VBoxContainer/IP.text = "Connecting..."
 
 
 func _on_disconnect_pressed():
 	$HBoxContainer/HomePanel/VBoxContainer/IP.text = "Not connected"
-	$HBoxContainer/SidePanel/VBoxContainer/Connect.disabled = false
-	$HBoxContainer/SidePanel/VBoxContainer/Disconnect.disabled = true
 	if embeddedPeer:
 		embeddedPeer.peer_disconnect()
 
@@ -304,20 +314,15 @@ func _on_feed_button_pressed():
 		$HBoxContainer/HomePanel/VBoxContainer/FadeLabel.fade_in("Not connected!")
 
 
-func display_ip():
-	if embeddedPeer:
-		var ip = embeddedPeer.get_remote_address()
-		var port = embeddedPeer.get_remote_port()
-		$HBoxContainer/HomePanel/VBoxContainer/IP.text = tr("Connected to: ").format({ip=ip, port=port})
+func display_ip(ip:String="", port:int=0):
+	if embeddedPeer and not ip:
+		ip = embeddedPeer.get_remote_address()
+		port = embeddedPeer.get_remote_port()
+		
+	$HBoxContainer/HomePanel/VBoxContainer/IP.text = tr("Connected to: ").format({ip=ip, port=port})
 
-func _on_en_pressed():
-	TranslationServer.set_locale("en_US")
+
+func ChangeLocale(locale:String):
+	TranslationServer.set_locale(locale)
 	display_ip()
 
-func _on_jp_pressed():
-	TranslationServer.set_locale("ja")
-	display_ip()
-
-func _on_eo_pressed():
-	TranslationServer.set_locale("eo")
-	display_ip()
