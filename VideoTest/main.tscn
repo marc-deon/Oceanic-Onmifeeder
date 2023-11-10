@@ -122,6 +122,25 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "14"
 
+[node name="LastFeed" type="HBoxContainer" parent="HBoxContainer/HomePanel/VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="HBoxContainer/HomePanel/VBoxContainer/LastFeed"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Last feed"
+horizontal_alignment = 2
+
+[node name="Value" type="Label" parent="HBoxContainer/HomePanel/VBoxContainer/LastFeed"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "12:12, January 1, 2012"
+
+[node name="FeedButton" type="Button" parent="HBoxContainer/HomePanel/VBoxContainer"]
+layout_mode = 2
+text = "Feed Now"
+
 [node name="SettingsPanel" type="PanelContainer" parent="HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
@@ -272,6 +291,7 @@ text = "Apply
 [connection signal="pressed" from="HBoxContainer/SidePanel/VBoxContainer/Settings" to="." method="_on_settings_pressed"]
 [connection signal="pressed" from="HBoxContainer/SidePanel/VBoxContainer/Connect" to="." method="_on_connect_pressed"]
 [connection signal="pressed" from="HBoxContainer/SidePanel/VBoxContainer/Disconnect" to="." method="_on_disconnect_pressed"]
+[connection signal="pressed" from="HBoxContainer/HomePanel/VBoxContainer/FeedButton" to="." method="_on_feed_button_pressed"]
 [connection signal="pressed" from="HBoxContainer/SettingsPanel/VBoxContainer/Buttons/Refresh" to="." method="_on_settings_refresh_pressed"]
 [connection signal="pressed" from="HBoxContainer/SettingsPanel/VBoxContainer/Buttons/Apply" to="." method="_on_settings_apply_pressed"]
 [connection signal="timeout" from="Timers/StatTimer" to="." method="_on_stat_timer_timeout"]
