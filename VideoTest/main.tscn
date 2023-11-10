@@ -71,19 +71,11 @@ size_flags_horizontal = 3
 [node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer/HomePanel"]
 layout_mode = 2
 
-[node name="IP" type="HBoxContainer" parent="HBoxContainer/HomePanel/VBoxContainer"]
-layout_mode = 2
-alignment = 1
-
-[node name="Label" type="Label" parent="HBoxContainer/HomePanel/VBoxContainer/IP"]
+[node name="IP" type="Label" parent="HBoxContainer/HomePanel/VBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Not connected"
-horizontal_alignment = 2
-
-[node name="Value" type="Label" parent="HBoxContainer/HomePanel/VBoxContainer/IP"]
-layout_mode = 2
-size_flags_horizontal = 3
+horizontal_alignment = 1
 
 [node name="Camera" type="TextureRect" parent="HBoxContainer/HomePanel/VBoxContainer"]
 custom_minimum_size = Vector2(10, 10)
@@ -266,6 +258,33 @@ layout_mode = 2
 theme_override_icons/updown = SubResource("ImageTexture_femu3")
 max_value = 14.0
 
+[node name="Languages" type="HBoxContainer" parent="HBoxContainer/SettingsPanel/VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="HBoxContainer/SettingsPanel/VBoxContainer/Languages"]
+layout_mode = 2
+size_flags_horizontal = 7
+text = "Language"
+
+[node name="en" type="Button" parent="HBoxContainer/SettingsPanel/VBoxContainer/Languages"]
+layout_mode = 2
+size_flags_horizontal = 7
+auto_translate = false
+text = "English"
+
+[node name="jp" type="Button" parent="HBoxContainer/SettingsPanel/VBoxContainer/Languages"]
+layout_mode = 2
+size_flags_horizontal = 7
+auto_translate = false
+text = "日本語"
+
+[node name="eo" type="Button" parent="HBoxContainer/SettingsPanel/VBoxContainer/Languages"]
+layout_mode = 2
+size_flags_horizontal = 7
+auto_translate = false
+text = "Esperanto"
+
 [node name="Node" type="Control" parent="HBoxContainer/SettingsPanel/VBoxContainer"]
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
@@ -296,6 +315,9 @@ text = "Apply
 [connection signal="pressed" from="HBoxContainer/SidePanel/VBoxContainer/Connect" to="." method="_on_connect_pressed"]
 [connection signal="pressed" from="HBoxContainer/SidePanel/VBoxContainer/Disconnect" to="." method="_on_disconnect_pressed"]
 [connection signal="pressed" from="HBoxContainer/HomePanel/VBoxContainer/FeedButton" to="." method="_on_feed_button_pressed"]
+[connection signal="pressed" from="HBoxContainer/SettingsPanel/VBoxContainer/Languages/en" to="." method="_on_en_pressed"]
+[connection signal="pressed" from="HBoxContainer/SettingsPanel/VBoxContainer/Languages/jp" to="." method="_on_jp_pressed"]
+[connection signal="pressed" from="HBoxContainer/SettingsPanel/VBoxContainer/Languages/eo" to="." method="_on_eo_pressed"]
 [connection signal="pressed" from="HBoxContainer/SettingsPanel/VBoxContainer/Buttons/Refresh" to="." method="_on_settings_refresh_pressed"]
 [connection signal="pressed" from="HBoxContainer/SettingsPanel/VBoxContainer/Buttons/Apply" to="." method="_on_settings_apply_pressed"]
 [connection signal="timeout" from="Timers/StatTimer" to="." method="_on_stat_timer_timeout"]
