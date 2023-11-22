@@ -62,7 +62,7 @@ func ConnectToPeerEnet() -> void:
 	
 	# This is the request to connect that we will send later
 	var s = " ".join(["CONN", IP.get_local_addresses()[0], hp_key, enetConnection.get_local_port()])
-	conn_packet = s.to_utf8_buffer()	
+	conn_packet = s.to_utf8_buffer()
 
 
 # Called when the node enters the scene tree for the first time.
@@ -81,26 +81,27 @@ func ProcessHolepunch(type_peer_data_channel:Array):
 	
 	if event_type == ENetConnection.EVENT_CONNECT:
 		var peerAddr:String = peer.get_remote_address()
+		print("connect event to ", peerAddr)
 		
+		
+		print("comp (", peerAddr, ") (", tentativeLocalPeerAddr, ") (", tentativePeerAddr,")")
 		# Connected to holepunch server successfully
 		if peerAddr == hpPeer.get_remote_address():
 			hpPeer = peer
 			hpPeer.send(CHANNEL.HOLEPUNCH, conn_packet, hpPeer.FLAG_RELIABLE)
 			print("sent conn packet")
 		
-		# Found a valid connection to embedded over local network
-		elif peerAddr == tentativeLocalPeerAddr:
-			embeddedPeer = peer
-			_on_connect_success()
-		
-		# Found a valid connection to embedded over internet
-		elif peerAddr == tentativePeerAddr:
+		# Found a valid connection to embedded over local network or internet
+		elif (peerAddr == tentativeLocalPeerAddr) or (peerAddr == tentativePeerAddr):
+			$HBoxContainer/SidePanel/VBoxContainer/Connect.disabled = true
+			$HBoxContainer/SidePanel/VBoxContainer/Disconnect.disabled = false
 			embeddedPeer = peer
 			_on_connect_success()
 		
 		
 	elif event_type == ENetConnection.EVENT_RECEIVE:
 		var response := Array(peer.get_packet().get_string_from_utf8().split(" "))
+		print("recieve event ", response)
 		match response:
 			["CONNTO", var addr, var local, var port, var localport]:
 				hpPeer.peer_disconnect()
@@ -109,9 +110,11 @@ func ProcessHolepunch(type_peer_data_channel:Array):
 				tentativePeerAddr = addr
 				
 				enetConnection.connect_to_host(addr, int(port))
+				print(addr, ":", int(port))
 				# And again over local network
 				tentativeLocalPeerAddr = local
 				enetConnection.connect_to_host(local, int(localport))
+				#print(local, ":", int(localport))
 				# We're done with the holepunch peer now
 			_:
 				print("unknown response ", response)
@@ -258,8 +261,6 @@ func _on_settings_pressed():
 
 func _on_connect_success():
 	$Timers/StatTimer.start()
-	var ip = embeddedPeer.get_remote_address()
-	var port = embeddedPeer.get_remote_port()
 	display_ip()
 	_on_settings_refresh_pressed()
 
@@ -296,7 +297,7 @@ func _on_settings_apply_pressed():
 
 
 func _on_feed_button_pressed():
-	if embeddedPeer:
+	if embeddedPeer and embeddedPeer.get_state() == embeddedPeer.STATE_CONNECTED:
 		$HBoxContainer/HomePanel/VBoxContainer/FadeLabel.fade_in("Feeding...")
 		var packet = JSON.stringify({"message_type": MESSAGE.MANUAL_FEED}).to_utf8_buffer()
 		embeddedPeer.send(CHANNEL.CONTROL, packet, ENetPacketPeer.FLAG_RELIABLE)
