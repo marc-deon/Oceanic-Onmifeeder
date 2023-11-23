@@ -55,6 +55,8 @@ var conn_packet:PackedByteArray
 var shouldTryConnect:bool
 var tentativePeerAddr:String
 var tentativeLocalPeerAddr:String
+var tentativePort:int
+var tentativeLocalPort:int
 
 func ConnectToHolepunch() -> void:
 	# Connect to holepunch server
@@ -95,12 +97,14 @@ func ProcessHolepunch(type_peer_data_channel:Array):
 			elif peerAddr == tentativeLocalPeerAddr:
 				embeddedPeer = peer
 				connected.emit(peer.get_remote_address(), peer.get_remote_port())
+				shouldTryConnect = false
 				SetRemote(true)
 			
 			# Found a valid connection to embedded over internet
 			elif peerAddr == tentativePeerAddr:
 				embeddedPeer = peer
 				connected.emit(peer.get_remote_address(), peer.get_remote_port())
+				shouldTryConnect = false
 				SetRemote(true)
 
 
@@ -109,13 +113,13 @@ func ProcessHolepunch(type_peer_data_channel:Array):
 			match response:
 				["CONNTO", var addr, var local, var port, var localport]:
 					hpPeer.peer_disconnect()
+					shouldTryConnect = true
 					# Try to connect once over internet
 					tentativePeerAddr = addr
-					
-					enetConnection.connect_to_host(addr, int(port))
+					tentativePort = int(port)
 					# And again over local network
 					tentativeLocalPeerAddr = local
-					enetConnection.connect_to_host(local, int(localport))
+					tentativeLocalPort = int(localport)
 					# We're done with the holepunch peer now
 				_:
 					print("unknown response ", response)
@@ -201,6 +205,10 @@ func RequestVideo():
 	if embeddedPeer.get_state() == embeddedPeer.STATE_CONNECTED:
 		embeddedPeer.send(CHANNEL.VIDEO, PackedByteArray([1]), ENetPacketPeer.FLAG_UNRELIABLE_FRAGMENT | ENetPacketPeer.FLAG_UNSEQUENCED)
 
+
+func TryConnect():
+	enetConnection.connect_to_host(tentativePeerAddr,  tentativePort)
+	enetConnection.connect_to_host(tentativeLocalPeerAddr, tentativeLocalPort)
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(_delta):
