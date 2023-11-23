@@ -165,8 +165,12 @@ func ProcessStats(type_peer_data_channel:Array):
 
 	match message['message_type'] as MESSAGE:
 		MESSAGE.GET_STATS:
-			$HBoxContainer/HomePanel/VBoxContainer/Temperature/Value.text = "%2.1f˚" % message['temp']
-			$HBoxContainer/HomePanel/VBoxContainer/Ph/Value.text = "%2.1f" % message['ph']
+			var temp = message['temp']
+			if $HBoxContainer/SettingsPanel.useCelsius:
+				temp = (temp - 32) * 5/9
+			var ph = message['ph']
+			$HBoxContainer/HomePanel/VBoxContainer/Temperature/Value.text = "%2.1f˚" % temp
+			$HBoxContainer/HomePanel/VBoxContainer/Ph/Value.text = "%2.1f" % ph
 			var t = message["last_feed"]
 			
 			# Aside from the month, these are all numbers (we're ignoring AM/PM for now).
