@@ -3,6 +3,12 @@ extends Control
 @onready var homePanel = $HBoxContainer/HomePanel
 @onready var settingsPanel = $HBoxContainer/SettingsPanel
 
+const PLACEHOLDER_MONTH_FORMAT := "numeric"
+#const PLACEHOLDER_MONTH_FORMAT := "full"
+
+signal connected(ip, port)
+signal disconnected
+
 enum CHANNEL {
 	NONE,
 	HOLEPUNCH,
@@ -41,100 +47,95 @@ const hp_addr := "highlyderivative.games"
 const hp_port := 4800
 var hp_key    := "poseidon"
 
-var enetConnected:bool = false
 var enetConnection:ENetConnection = ENetConnection.new()
 var embeddedPeer:ENetPacketPeer
 
+# Holepunch stuff
+var hpPeer:ENetPacketPeer
+var conn_packet:PackedByteArray
+var shouldTryConnect:bool
+var tentativePeerAddr:String
+var tentativeLocalPeerAddr:String
+var tentativePort:int
+var tentativeLocalPort:int
 
-func ConnectToPeerEnet() -> Array:
-	# Bind to all IPv4 addresses, any port; we're connecting, not listening
-	enetConnection.create_host_bound("0.0.0.0", 0)
-	
+func ConnectToHolepunch() -> void:
 	# Connect to holepunch server
-	var hpPeer:ENetPacketPeer
 	hpPeer = enetConnection.connect_to_host(hp_addr, hp_port)
+	print("connect to hp")
 	
 	# This is the request to connect that we will send later
 	var s = " ".join(["CONN", IP.get_local_addresses()[0], hp_key, enetConnection.get_local_port()])
-	var conn_packet = s.to_utf8_buffer()
+	conn_packet = s.to_utf8_buffer()
+
+
+# Called when the node enters the scene tree for the first time.
+func _ready():
+	# Bind to all IPv4 addresses, any port; we're connecting, not listening
+	enetConnection.create_host_bound("0.0.0.0", 0)
 	
-	#var tentativePeer:ENetPacketPeer
-	var tentativePeerAddr:String
-	var tentativeLocalPeerAddr:String
-	#var tentativeLocalPeer:ENetPacketPeer
+	# Start with the home panel visible and the side panel minimized
+	_on_home_pressed()
+	_on_hamburger_toggled(true)
+	SetRemote(false)
+
+
+func ProcessHolepunch(type_peer_data_channel:Array):
+	var event_type:ENetConnection.EventType = type_peer_data_channel[0]
+	var peer:ENetPacketPeer = type_peer_data_channel[1]
 	
-	while true:
-		var type_peer_data_channel:Array = enetConnection.service(500)
-		var event_type:ENetConnection.EventType = type_peer_data_channel[0]
-		var peer:ENetPacketPeer = type_peer_data_channel[1]
-		
-		if event_type == ENetConnection.EVENT_CONNECT:
+	match event_type:
+		ENetConnection.EVENT_CONNECT:
 			var peerAddr:String = peer.get_remote_address()
+			print("connect event to", peerAddr)
 			
 			# Connected to holepunch server successfully
 			if peerAddr == hpPeer.get_remote_address():
 				hpPeer = peer
 				hpPeer.send(CHANNEL.HOLEPUNCH, conn_packet, hpPeer.FLAG_RELIABLE)
+				print("sent conn packet")
 			
 			# Found a valid connection to embedded over local network
 			elif peerAddr == tentativeLocalPeerAddr:
 				embeddedPeer = peer
-				break
+				connected.emit(peer.get_remote_address(), peer.get_remote_port())
+				shouldTryConnect = false
+				SetRemote(true)
 			
 			# Found a valid connection to embedded over internet
 			elif peerAddr == tentativePeerAddr:
 				embeddedPeer = peer
-				break
-			
-			
-		elif event_type == ENetConnection.EVENT_RECEIVE:
+				connected.emit(peer.get_remote_address(), peer.get_remote_port())
+				shouldTryConnect = false
+				SetRemote(true)
+
+
+		ENetConnection.EVENT_RECEIVE:
 			var response := Array(peer.get_packet().get_string_from_utf8().split(" "))
 			match response:
 				["CONNTO", var addr, var local, var port, var localport]:
-					hpPeer.peer_disconnect()
-					
+#					hpPeer.peer_disconnect_later()
+					shouldTryConnect = true
 					# Try to connect once over internet
 					tentativePeerAddr = addr
-					
-					enetConnection.connect_to_host(addr, int(port))
+					tentativePort = int(port)
 					# And again over local network
 					tentativeLocalPeerAddr = local
-					enetConnection.connect_to_host(local, int(localport))
+					tentativeLocalPort = int(localport)
 					# We're done with the holepunch peer now
 				_:
 					print("unknown response ", response)
 
-	# We only need one of these
-#	if embeddedPeer == tentativePeer:
-#		tentativeLocalPeer.peer_disconnect()
-#	elif embeddedPeer == tentativeLocalPeer:
-#		tentativePeer.peer_disconnect()
-#	else:
-#		print("What?")
-#		breakpoint
 
-	#Start Timers
-	$Timers/StatTimer.start()
-	return [embeddedPeer.get_remote_address(), embeddedPeer.get_remote_port()]
-
-# Called when the node enters the scene tree for the first time.
-func _ready():
-	# Start with the home panel visible and the side panel minimized
-	_on_home_pressed()
-	_on_hamburger_toggled(true)
-
-
-func ProcessHolepunch(bytes:PackedByteArray):
-	pass
-
-
-func ProcessControl(bytes:PackedByteArray):
+func ProcessControl(type_peer_data_channel:Array):
+	var bytes = type_peer_data_channel[1].get_packet()
 	var message:Dictionary = JSON.parse_string(bytes.get_string_from_utf8())
 	if message['error'] != ERROR.OK:
 		printerr("PROCESS ERROR: ", message['error'] as ERROR)
 	
 	match message['message_type'] as MESSAGE:
 		MESSAGE.GET_SETTINGS:
+			print("got settings")
 			$HBoxContainer/SettingsPanel.UpdateSettings(message)
 		
 		MESSAGE.SAVE_SETTINGS:
@@ -156,61 +157,109 @@ func ProcessControl(bytes:PackedByteArray):
 			else:
 				$HBoxContainer/HomePanel/VBoxContainer/FadeLabel.fade_in("Feed error!", Color.RED)
 
-const MONTHS := ["January","February","March","April","May","June","July","August","September","October","November","December"]
 
-func ProcessStats(bytes:PackedByteArray):
+func ProcessStats(type_peer_data_channel:Array):
+	var bytes = type_peer_data_channel[1].get_packet()
 	var message:Dictionary = JSON.parse_string(bytes.get_string_from_utf8())
 	if message['error'] != ERROR.OK:
 		printerr("STATS ERROR: ", message['error'])
 
 	match message['message_type'] as MESSAGE:
 		MESSAGE.GET_STATS:
-			$HBoxContainer/HomePanel/VBoxContainer/Temperature/Value.text = "%2.1f˚" % message['temp']
-			$HBoxContainer/HomePanel/VBoxContainer/Ph/Value.text = "%2.1f" % message['ph']
+			var temp = message['temp']
+			if $HBoxContainer/SettingsPanel.useCelsius:
+				temp = (temp - 32) * 5/9
+			var ph = message['ph']
+			$HBoxContainer/HomePanel/VBoxContainer/Temperature/Value.text = "%2.1f˚" % temp
+			$HBoxContainer/HomePanel/VBoxContainer/Ph/Value.text = "%2.1f" % ph
 			var t = message["last_feed"]
-			# HH:MM, Month Day, Year
-			$HBoxContainer/HomePanel/VBoxContainer/LastFeed/Value.text = "%d:%d, %s %d, %4d" % [t[3], t[4], MONTHS[t[2]-1], t[1], t[0]]
+			
+			# Aside from the month, these are all numbers (we're ignoring AM/PM for now).
+			var year = t[0]
+			# THis gets the localized month, e.g. 10 -> October, or 10 -> Oktobro
+			var month = tr("MONTH_" + str(t[1]), PLACEHOLDER_MONTH_FORMAT)
+			var day = t[2]
+			var hour = t[3]
+			var minute = "%02.0f" % t[4]
+			
+			# Good lord 12 hour time sucks ass. wtf?
+			var ampm = ""
+			if not $HBoxContainer/SettingsPanel.use24Hour:
+				ampm = tr("TIME_AM") if hour < 12 else tr("TIME_PM")
+				hour = int(hour) % 12
+				if hour == 0:
+					hour = 12
+#			if 
+#				month = tr("MONTH_" + str(t[1]), PLACEHOLDER_MONTH_FORMAT)
+#			else:
+#				_PLACEHOLDER_MONTH_FORMAT = ""
+			
+			# tr() fetches the apropriate format for the given locale,
+			# and .format supplies the apropriate substiutions
+			$HBoxContainer/HomePanel/VBoxContainer/LastFeed/Value.text =tr(
+				"DATE_TIME_FORMAT", PLACEHOLDER_MONTH_FORMAT
+				).format({ YEAR = year, MONTH = month, DAY = day, HOUR = hour, MINUTE = minute, AMPM = ampm })
 
 
-func ProcessVideo(bytes:PackedByteArray):
+func ProcessVideo(type_peer_data_channel:Array):
+	var bytes = type_peer_data_channel[1].get_packet()
 	if len(bytes) > 0:
 		$HBoxContainer/HomePanel/VBoxContainer/Camera.DrawFrame(bytes)
 
 
 func RequestVideo():
-	embeddedPeer.send(CHANNEL.VIDEO, PackedByteArray([1]), ENetPacketPeer.FLAG_UNRELIABLE_FRAGMENT | ENetPacketPeer.FLAG_UNSEQUENCED)
+	if embeddedPeer.get_state() == embeddedPeer.STATE_CONNECTED:
+		embeddedPeer.send(CHANNEL.VIDEO, PackedByteArray([1]), ENetPacketPeer.FLAG_UNRELIABLE_FRAGMENT | ENetPacketPeer.FLAG_UNSEQUENCED)
 
+
+func TryConnect():
+	enetConnection.connect_to_host(tentativePeerAddr,  tentativePort)
+	enetConnection.connect_to_host(tentativeLocalPeerAddr, tentativeLocalPort)
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta):
-	if not embeddedPeer or (embeddedPeer.get_state() != embeddedPeer.PeerState.STATE_CONNECTED):
-		return
+func _process(_delta):
 	
+	# I don't love this, but... it does work.
+	# Fixes the issue of:
+	# When going through NAT, the first connection attempt is dropped upon arrival because no outbound data has been sent yet. 
+	if shouldTryConnect:
+		TryConnect()
 	var type_peer_data_channel = enetConnection.service(0)
 
-	var event_type = type_peer_data_channel[0]
+	var event_type:ENetConnection.EventType = type_peer_data_channel[0]
 	var peer:ENetPacketPeer = type_peer_data_channel[1]
-	var channel:int = type_peer_data_channel[3]
+	var channel:CHANNEL = type_peer_data_channel[3]
 	
 	if $HBoxContainer/HomePanel/VBoxContainer/Camera.is_visible_in_tree():
-		RequestVideo()
+		if embeddedPeer:
+			RequestVideo()
 	
-	match event_type:
-		ENetConnection.EVENT_RECEIVE:
-			var bytes = peer.get_packet()
-			
-			match channel:
-				CHANNEL.HOLEPUNCH:
-					ProcessHolepunch(bytes)
-				
-				CHANNEL.CONTROL:
-					ProcessControl(bytes)
+	match [event_type, channel]:
+		[_, CHANNEL.HOLEPUNCH]:
+			ProcessHolepunch(type_peer_data_channel)
+		
+		[ENetConnection.EVENT_CONNECT, CHANNEL.NONE]:
+			ProcessHolepunch(type_peer_data_channel)
+		
+		[ENetConnection.EVENT_RECEIVE, CHANNEL.CONTROL]:
+			ProcessControl(type_peer_data_channel)
 
-				CHANNEL.STATS:
-					ProcessStats(bytes)
+		[ENetConnection.EVENT_RECEIVE, CHANNEL.STATS]:
+			ProcessStats(type_peer_data_channel)
 
-				CHANNEL.VIDEO:
-					ProcessVideo(bytes)
+		[ENetConnection.EVENT_RECEIVE, CHANNEL.VIDEO]:
+			ProcessVideo(type_peer_data_channel)
+		
+		[ENetConnection.EVENT_DISCONNECT, _]:
+			print("discon event")
+			if embeddedPeer and peer == embeddedPeer:
+				disconnected.emit()
+		
+		[ENetConnection.EVENT_NONE, _]:
+			pass
+		
+		[var ev, var chan]:
+			print("unknown event-channel ", ev, " ", chan)
 
 
 # Toggle visibility of side pannel buttons
@@ -236,37 +285,42 @@ func _on_settings_pressed():
 	$HBoxContainer/SidePanel/VBoxContainer/Home.disabled = false
 
 
+func _on_connect_success(ip:String, port:int):
+	$Timers/StatTimer.start()
+	RefreshSettings()
+	display_ip(ip, port)
+
+
+func SetRemote(connected:bool):
+	$HBoxContainer/SidePanel/VBoxContainer/Connect.disabled = connected
+	$HBoxContainer/SidePanel/VBoxContainer/Disconnect.disabled = not connected
+	
+	$HBoxContainer/SettingsPanel.SetRemote(connected)
+
+
 func _on_connect_pressed():
-	$HBoxContainer/HomePanel/VBoxContainer/IP/Label.text = "Connecting..."
-	$HBoxContainer/HomePanel/VBoxContainer/IP/Value.text = "..."
-	var peer = ConnectToPeerEnet()
-	$HBoxContainer/HomePanel/VBoxContainer/IP/Label.text = "Connected to: "
-	$HBoxContainer/HomePanel/VBoxContainer/IP/Value.text = peer[0] + ":" + str(peer[1])
-	$HBoxContainer/SidePanel/VBoxContainer/Connect.disabled = true
-	$HBoxContainer/SidePanel/VBoxContainer/Disconnect.disabled = false
-	_on_settings_refresh_pressed()
+	ConnectToHolepunch()
+	$HBoxContainer/HomePanel/VBoxContainer/IP.text = "Connecting..."
 
 
 func _on_disconnect_pressed():
-	$HBoxContainer/HomePanel/VBoxContainer/IP/Label.text = "Not connected"
-	$HBoxContainer/HomePanel/VBoxContainer/IP/Value.text = ""
-	$HBoxContainer/SidePanel/VBoxContainer/Connect.disabled = false
-	$HBoxContainer/SidePanel/VBoxContainer/Disconnect.disabled = true
+	$HBoxContainer/HomePanel/VBoxContainer/IP.text = "Not connected"
 	if embeddedPeer:
 		embeddedPeer.peer_disconnect()
 
 
 func _on_stat_timer_timeout():
 	var packet:PackedByteArray = PackedByteArray([MESSAGE.GET_STATS])
-	embeddedPeer.send(CHANNEL.STATS, packet, ENetPacketPeer.FLAG_RELIABLE)
+	if embeddedPeer.get_state() == embeddedPeer.STATE_CONNECTED:
+		embeddedPeer.send(CHANNEL.STATS, packet, ENetPacketPeer.FLAG_RELIABLE)
 
 
-func _on_settings_refresh_pressed():
+func RefreshSettings():
 	var packet = JSON.stringify({"message_type":MESSAGE.GET_SETTINGS}).to_utf8_buffer()
 	embeddedPeer.send(CHANNEL.CONTROL, packet, ENetPacketPeer.FLAG_RELIABLE)
 
 
-func _on_settings_apply_pressed():
+func _on_settings_remote_apply_pressed():
 	var d = $HBoxContainer/SettingsPanel.GetSettings()
 	d["message_type"] = MESSAGE.SAVE_SETTINGS
 	var packet = JSON.stringify(d).to_utf8_buffer()
@@ -274,6 +328,23 @@ func _on_settings_apply_pressed():
 
 
 func _on_feed_button_pressed():
-	$HBoxContainer/HomePanel/VBoxContainer/FadeLabel.fade_in("Feeding...")
-	var packet = JSON.stringify({"message_type": MESSAGE.MANUAL_FEED}).to_utf8_buffer()
-	embeddedPeer.send(CHANNEL.CONTROL, packet, ENetPacketPeer.FLAG_RELIABLE)
+	if embeddedPeer and embeddedPeer.get_state() == embeddedPeer.STATE_CONNECTED:
+		$HBoxContainer/HomePanel/VBoxContainer/FadeLabel.fade_in("Feeding...")
+		var packet = JSON.stringify({"message_type": MESSAGE.MANUAL_FEED}).to_utf8_buffer()
+		embeddedPeer.send(CHANNEL.CONTROL, packet, ENetPacketPeer.FLAG_RELIABLE)
+	else:
+		$HBoxContainer/HomePanel/VBoxContainer/FadeLabel.fade_in("Not connected!", Color.RED)
+
+
+func display_ip(ip:String="", port:int=0):
+	if embeddedPeer and not ip:
+		ip = embeddedPeer.get_remote_address()
+		port = embeddedPeer.get_remote_port()
+		
+	$HBoxContainer/HomePanel/VBoxContainer/IP.text = tr("Connected to: ").format({ip=ip, port=port})
+
+
+func ChangeLocale(locale:String):
+	TranslationServer.set_locale(locale)
+	display_ip()
+

@@ -1,0 +1,210 @@
+# LANGUAGE translation for VideoTest for the following files:
+# res://main.tscn
+#
+# FIRST AUTHOR < EMAIL @ADDRESS>, 2023.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: VideoTest\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: ja\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+msgid "Saved successfully"
+msgstr "セーブしました"
+
+msgid "Connected to: "
+msgstr "{ip}:{port}に繋げている"
+
+msgid "Connecting..."
+msgstr "繋げる中..."
+
+msgid "Not connected"
+msgstr "繋げていない"
+
+msgid "Home"
+msgstr "ホーム"
+
+msgid "Settings"
+msgstr "制定"
+
+msgid "Connect"
+msgstr "繋ぐ"
+
+msgid "Disconnect"
+msgstr "切る"
+
+msgid "Temperature"
+msgstr "温度"
+
+msgid "Last feed"
+msgstr "前抜きの時"
+
+msgid "Feed Now"
+msgstr "今すぐ抜き"
+
+msgid "Username (NYI)"
+msgstr "ユーザー名"
+
+msgid "Password (NYI)"
+msgstr "パスワード"
+
+msgid "Feed Time"
+msgstr "抜きの時"
+
+msgid "Feed Length"
+msgstr "抜きの長さ"
+
+msgid "Temperature Warning"
+msgstr "温度の警告"
+
+msgid "pH Warning"
+msgstr "pHの警告"
+
+msgid "Language"
+msgstr "言語"
+
+msgid "Reset"
+msgstr "再設定する"
+
+msgid "Apply\n"
+msgstr "申し込む"
+
+msgctxt "full"
+msgid "MONTH_1"
+msgstr "1"
+
+msgctxt "full"
+msgid "MONTH_2"
+msgstr "2"
+
+msgctxt "full"
+msgid "MONTH_3"
+msgstr "3"
+
+msgctxt "full"
+msgid "MONTH_4"
+msgstr "4"
+
+msgctxt "full"
+msgid "MONTH_5"
+msgstr "5"
+
+msgctxt "full"
+msgid "MONTH_6"
+msgstr "6"
+
+msgctxt "full"
+msgid "MONTH_7"
+msgstr "7"
+
+msgctxt "full"
+msgid "MONTH_8"
+msgstr "8"
+
+msgctxt "full"
+msgid "MONTH_9"
+msgstr "9"
+
+msgctxt "full"
+msgid "MONTH_10"
+msgstr "10"
+
+msgctxt "full"
+msgid "MONTH_11"
+msgstr "11"
+
+msgctxt "full"
+msgid "MONTH_12"
+msgstr "12"
+
+msgctxt "numeric"
+msgid "MONTH_1"
+msgstr "1"
+msgctxt "numeric"
+msgid "MONTH_2"
+msgstr "2"
+msgctxt "numeric"
+msgid "MONTH_3"
+msgstr "3"
+msgctxt "numeric"
+msgid "MONTH_4"
+msgstr "4"
+msgctxt "numeric"
+msgid "MONTH_5"
+msgstr "5"
+msgctxt "numeric"
+msgid "MONTH_6"
+msgstr "6"
+msgctxt "numeric"
+msgid "MONTH_7"
+msgstr "7"
+msgctxt "numeric"
+msgid "MONTH_8"
+msgstr "8"
+msgctxt "numeric"
+msgid "MONTH_9"
+msgstr "9"
+msgctxt "numeric"
+msgid "MONTH_10"
+msgstr "10"
+msgctxt "numeric"
+msgid "MONTH_11"
+msgstr "11"
+msgctxt "numeric"
+msgid "MONTH_12"
+msgstr "12"
+
+msgctxt "full"
+msgid "DATE_TIME_FORMAT"
+msgstr "{HOUR}:{MINUTE}　{YEAR}年{MONTH}月{DAY}日"
+
+msgctxt "numeric"
+msgid "DATE_TIME_FORMAT"
+msgstr "{HOUR}:{MINUTE}　{YEAR}-{MONTH}-{DAY}"
+
+msgid "Feeding..."
+msgstr "抜く中..."
+
+msgid "Not connected!"
+msgstr "繋げていない！"
+
+msgid "SECONDS_TIME"
+msgstr "秒"
+
+msgid "Remote Settings"
+msgstr "遠い制定"
+
+msgid "Local Settings"
+msgstr "近い制定"
+
+msgid "Time Format"
+msgstr "時間のフォーマット"
+
+msgid "Temperature Format"
+msgstr "温度のフォーマット"
+
+msgid "12 Hour"
+msgstr "１２時間"
+
+msgid "24 Hour"
+msgstr "２４時間"
+
+msgid "Fahrenheit"
+msgstr "華氏温度"
+
+msgid "Celsius"
+msgstr "零度"
+
+msgid "Save"
+msgstr "セーブする"
+
+msgid "TIME_AM"
+msgstr "午前"
+
+msgid "TIME_PM"
+msgstr "午後"
