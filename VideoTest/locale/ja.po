@@ -14,99 +14,63 @@ msgstr ""
 "Language: ja\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#: main.tscn
 msgid "Saved successfully"
-msgstr ""
+msgstr "セーブしました"
 
-#: main.tscn
 msgid "Connected to: "
 msgstr "{ip}:{port}に繋げている"
 
-#: main.tscn
 msgid "Connecting..."
 msgstr "繋げる中..."
 
-#: main.tscn
 msgid "Not connected"
 msgstr "繋げていない"
 
-#: main.tscn
 msgid "Home"
-msgstr ""
+msgstr "ホーム"
 
-#: main.tscn
 msgid "Settings"
 msgstr "制定"
 
-#: main.tscn
 msgid "Connect"
 msgstr "繋ぐ"
 
-#: main.tscn
 msgid "Disconnect"
 msgstr "切る"
 
-#: main.tscn
 msgid "Temperature"
 msgstr "温度"
 
-#: main.tscn
-msgid "pH"
-msgstr ""
-
-#: main.tscn
 msgid "Last feed"
-msgstr ""
+msgstr "前抜きの時"
 
-#: main.tscn
-msgid "12:12, January 1, 2012"
-msgstr ""
-
-#: main.tscn
 msgid "Feed Now"
-msgstr ""
+msgstr "今すぐ抜き"
 
-#: main.tscn
 msgid "Username (NYI)"
-msgstr ""
+msgstr "ユーザー名"
 
-#: main.tscn
-msgid "asdasd"
-msgstr ""
-
-#: main.tscn
 msgid "Password (NYI)"
-msgstr ""
+msgstr "パスワード"
 
-#: main.tscn
 msgid "Feed Time"
-msgstr ""
+msgstr "抜きの時"
 
-#: main.tscn
-msgid ":"
-msgstr ""
-
-#: main.tscn
 msgid "Feed Length"
-msgstr ""
+msgstr "抜きの長さ"
 
-#: main.tscn
 msgid "Temperature Warning"
 msgstr "温度の警告"
 
-#: main.tscn
 msgid "pH Warning"
-msgstr ""
+msgstr "pHの警告"
 
-#: main.tscn
 msgid "Language"
 msgstr "言語"
 
-#: main.tscn
-msgid "Refresh\n"
-msgstr "リーフレシする"
+msgid "Reset"
+msgstr "再設定する"
 
-#: main.tscn
 msgid "Apply\n"
 msgstr "申し込む"
 
@@ -150,7 +114,37 @@ msgid "DATE_TIME_FORMAT"
 msgstr "{HOUR}:{MINUTE}　{YEAR}年{MONTH}月{DAY}日"
 
 msgid "Feeding..."
-msgstr ""
+msgstr "抜く中..."
 
 msgid "Not connected!"
-msgstr ""
+msgstr "繋げていない！"
+
+msgid "SECONDS_TIME"
+msgstr "秒"
+
+msgid "Remote Settings"
+msgstr "遠い制定"
+
+msgid "Local Settings"
+msgstr "近い制定"
+
+msgid "Time Format"
+msgstr "時間のフォーマット"
+
+msgid "Temperature Format"
+msgstr "温度のフォーマット"
+
+msgid "12 Hour"
+msgstr "１２時間"
+
+msgid "24 Hour"
+msgstr "２４時間"
+
+msgid "Fahrenheit"
+msgstr "華氏温度"
+
+msgid "Celsius"
+msgstr "零度"
+
+msgid "Save"
+msgstr "セーブする"

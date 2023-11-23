@@ -90,6 +90,9 @@ msgstr "Averto de pH"
 msgid "Language"
 msgstr "Lingvo"
 
+msgid "Reset"
+msgstr "Reŝargu"
+
 #: main.tscn
 msgid "Refresh\n"
 msgstr "Refreŝigu"
@@ -141,4 +144,36 @@ msgid "Feeding..."
 msgstr "Nutrantas..."
 
 msgid "Not connected!"
-msgstr ""
+msgstr "Ne konektata!"
+
+msgid "SECONDS_TIME"
+msgid_plural ""
+msgstr[0] "sekundo"
+msgstr[1] "sekundoj"
+
+msgid "Remote Settings"
+msgstr "Agordoj Foraj"
+
+msgid "Local Settings"
+msgstr "Agordoj Proksimaj"
+
+msgid "Time Format"
+msgstr "Formato de Tempo"
+
+msgid "Temperature Format"
+msgstr "Formato de Temperatuo"
+
+msgid "12 Hour"
+msgstr "12 Horoj"
+
+msgid "24 Hour"
+msgstr "24 Horoj"
+
+msgid "Fahrenheit"
+msgstr "Farenhejto"
+
+msgid "Celsius"
+msgstr "Celsiuso"
+
+msgid "Save"
+msgstr "Konservu"
