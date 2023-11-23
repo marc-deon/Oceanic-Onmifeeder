@@ -232,3 +232,9 @@ msgid "SECONDS_TIME"
 msgid_plural ""
 msgstr[0] "second"
 msgstr[1] "seconds"
+
+msgid "TIME_AM"
+msgstr "AM"
+
+msgid "TIME_PM"
+msgstr "PM"

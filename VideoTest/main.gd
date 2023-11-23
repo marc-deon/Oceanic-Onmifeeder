@@ -4,6 +4,7 @@ extends Control
 @onready var settingsPanel = $HBoxContainer/SettingsPanel
 
 const PLACEHOLDER_MONTH_FORMAT := "numeric"
+#const PLACEHOLDER_MONTH_FORMAT := "full"
 
 signal connected(ip, port)
 signal disconnected
@@ -176,27 +177,27 @@ func ProcessStats(type_peer_data_channel:Array):
 			# Aside from the month, these are all numbers (we're ignoring AM/PM for now).
 			var year = t[0]
 			# THis gets the localized month, e.g. 10 -> October, or 10 -> Oktobro
-			var _PLACEHOLDER_MONTH_FORMAT = PLACEHOLDER_MONTH_FORMAT
-			var month = tr("MONTH_" + str(t[1]))
+			var month = tr("MONTH_" + str(t[1]), PLACEHOLDER_MONTH_FORMAT)
 			var day = t[2]
 			var hour = t[3]
-			var minute = t[4]
+			var minute = "%02.0f" % t[4]
 			
 			# Good lord 12 hour time sucks ass. wtf?
 			var ampm = ""
-			if TranslationServer.get_locale() == "en_US":
-				month = tr("MONTH_" + str(t[1]), PLACEHOLDER_MONTH_FORMAT)
-				ampm = "AM" if hour < 12 else "PM"
+			if not $HBoxContainer/SettingsPanel.use24Hour:
+				ampm = tr("TIME_AM") if hour < 12 else tr("TIME_PM")
 				hour = int(hour) % 12
 				if hour == 0:
 					hour = 12
-			else:
-				_PLACEHOLDER_MONTH_FORMAT = ""
+#			if 
+#				month = tr("MONTH_" + str(t[1]), PLACEHOLDER_MONTH_FORMAT)
+#			else:
+#				_PLACEHOLDER_MONTH_FORMAT = ""
 			
 			# tr() fetches the apropriate format for the given locale,
 			# and .format supplies the apropriate substiutions
 			$HBoxContainer/HomePanel/VBoxContainer/LastFeed/Value.text =tr(
-				"DATE_TIME_FORMAT", _PLACEHOLDER_MONTH_FORMAT
+				"DATE_TIME_FORMAT", PLACEHOLDER_MONTH_FORMAT
 				).format({ YEAR = year, MONTH = month, DAY = day, HOUR = hour, MINUTE = minute, AMPM = ampm })
 
 
