@@ -237,3 +237,12 @@ msgstr "atm."
 
 msgid "TIME_PM"
 msgstr "ptm."
+
+msgid "THEME"
+msgstr "Temo"
+
+msgid "THEME_DARK"
+msgstr "Malbrila"
+
+msgid "THEME_LIGHT"
+msgstr "Brila"

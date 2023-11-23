@@ -348,3 +348,10 @@ func ChangeLocale(locale:String):
 	TranslationServer.set_locale(locale)
 	display_ip()
 
+
+const lighttheme = preload("res://LightTheme.tres")
+func ChangeTheme(light):
+	if light:
+		theme = lighttheme
+	else:
+		theme = null

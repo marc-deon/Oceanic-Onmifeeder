@@ -1,5 +1,6 @@
 extends PanelContainer
 signal language_updated(locale:String)
+signal theme_updated(light:bool)
 signal apply_remote
 signal reset_remote
 
@@ -75,3 +76,6 @@ func on_time_format_updated(index):
 func on_temp_format_updated(index):
 	useCelsius = bool(index)
 	print("useCelsius ", useCelsius)
+
+func on_theme_updated(index):
+	theme_updated.emit(index == 1)
