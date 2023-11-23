@@ -313,7 +313,8 @@ def Service() -> None:
     if event.type == enet.EVENT_TYPE_CONNECT:
         print("connect event")
     elif event.type == enet.EVENT_TYPE_DISCONNECT:
-        print("disconnect")
+        print("disconnect from", event.peer.address)
+
     match event.type:
         case enet.EVENT_TYPE_CONNECT:
             print("connect event to", event.peer)
