@@ -86,6 +86,7 @@ func ProcessHolepunch(type_peer_data_channel:Array):
 	match event_type:
 		ENetConnection.EVENT_CONNECT:
 			var peerAddr:String = peer.get_remote_address()
+			print("connect event to", peerAddr)
 			
 			# Connected to holepunch server successfully
 			if peerAddr == hpPeer.get_remote_address():
@@ -112,7 +113,7 @@ func ProcessHolepunch(type_peer_data_channel:Array):
 			var response := Array(peer.get_packet().get_string_from_utf8().split(" "))
 			match response:
 				["CONNTO", var addr, var local, var port, var localport]:
-					hpPeer.peer_disconnect()
+#					hpPeer.peer_disconnect_later()
 					shouldTryConnect = true
 					# Try to connect once over internet
 					tentativePeerAddr = addr
@@ -245,6 +246,7 @@ func _process(_delta):
 			ProcessVideo(type_peer_data_channel)
 		
 		[ENetConnection.EVENT_DISCONNECT, _]:
+			print("discon event")
 			if embeddedPeer and peer == embeddedPeer:
 				disconnected.emit()
 		
