@@ -51,8 +51,11 @@ var embeddedPeer:ENetPacketPeer
 # Holepunch stuff
 var hpPeer:ENetPacketPeer
 var conn_packet:PackedByteArray
+var shouldTryConnect:bool
 var tentativePeerAddr:String
 var tentativeLocalPeerAddr:String
+var tentativePort:int
+var tentativeLocalPort:int
 
 func ConnectToPeerEnet() -> void:
 	
@@ -96,6 +99,7 @@ func ProcessHolepunch(type_peer_data_channel:Array):
 			$HBoxContainer/SidePanel/VBoxContainer/Connect.disabled = true
 			$HBoxContainer/SidePanel/VBoxContainer/Disconnect.disabled = false
 			embeddedPeer = peer
+			shouldTryConnect = false
 			_on_connect_success()
 		
 		
@@ -104,21 +108,22 @@ func ProcessHolepunch(type_peer_data_channel:Array):
 		print("recieve event ", response)
 		match response:
 			["CONNTO", var addr, var local, var port, var localport]:
-				hpPeer.peer_disconnect()
-				
+#				hpPeer.peer_disconnect()
+				shouldTryConnect = true
 				# Try to connect once over internet
-				tentativePeerAddr = addr
-				
-				enetConnection.connect_to_host(addr, int(port))
-				print(addr, ":", int(port))
-				# And again over local network
 				tentativeLocalPeerAddr = local
-				enetConnection.connect_to_host(local, int(localport))
-				#print(local, ":", int(localport))
+				tentativeLocalPort = int(localport)
+				# And again over local network
+				tentativePeerAddr = addr
+				tentativePort = int(port)
 				# We're done with the holepunch peer now
 			_:
 				print("unknown response ", response)
 
+
+func TryConnect():
+	enetConnection.connect_to_host(tentativePeerAddr, tentativePort)
+	enetConnection.connect_to_host(tentativeLocalPeerAddr, tentativeLocalPort)
 
 
 func ProcessControl(type_peer_data_channel:Array):
@@ -199,6 +204,11 @@ func RequestVideo():
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(_delta):
 	
+	# I don't love this, but... it does work.
+	# Fixes the issue of:
+	# When going through NAT, the first connection attempt is dropped upon arrival because no outbound data has been sent yet. 
+	if shouldTryConnect:
+		TryConnect()
 	var type_peer_data_channel = enetConnection.service(0)
 
 	var event_type:ENetConnection.EventType = type_peer_data_channel[0]
@@ -225,8 +235,6 @@ func _process(_delta):
 			ProcessVideo(type_peer_data_channel)
 		
 		[ENetConnection.EVENT_DISCONNECT, _]:
-#			if embeddedPeer and not embeddedPeer.is_active():
-#				embeddedPeer = null
 			pass
 		
 		[ENetConnection.EVENT_NONE, _]:
