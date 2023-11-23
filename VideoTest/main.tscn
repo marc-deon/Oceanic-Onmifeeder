@@ -1,15 +1,11 @@
-[gd_scene load_steps=9 format=3 uid="uid://dpmw1n0onhdkf"]
+[gd_scene load_steps=7 format=3 uid="uid://dpmw1n0onhdkf"]
 
 [ext_resource type="Texture2D" uid="uid://c8nh38nw53ual" path="res://demo.png" id="1_j84c0"]
 [ext_resource type="Script" path="res://main.gd" id="1_wfqsr"]
 [ext_resource type="Texture2D" uid="uid://cxh1i2f5w3chh" path="res://Hamburger_icon.svg" id="2_m6ch3"]
 [ext_resource type="Script" path="res://CameraDisplay.gd" id="3_te02d"]
-[ext_resource type="Script" path="res://SettingsPanel.gd" id="4_6mowx"]
 [ext_resource type="PackedScene" uid="uid://mcfhr3opdp2j" path="res://FadeLabel.tscn" id="5_3btmq"]
-
-[sub_resource type="ImageTexture" id="ImageTexture_o0wrb"]
-
-[sub_resource type="ImageTexture" id="ImageTexture_femu3"]
+[ext_resource type="PackedScene" uid="uid://dpyivff23vrii" path="res://settings_panel.tscn" id="6_ooayv"]
 
 [node name="ControlRoot" type="PanelContainer"]
 anchors_preset = 15
@@ -71,19 +67,11 @@ size_flags_horizontal = 3
 [node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer/HomePanel"]
 layout_mode = 2
 
-[node name="IP" type="HBoxContainer" parent="HBoxContainer/HomePanel/VBoxContainer"]
-layout_mode = 2
-alignment = 1
-
-[node name="Label" type="Label" parent="HBoxContainer/HomePanel/VBoxContainer/IP"]
+[node name="IP" type="Label" parent="HBoxContainer/HomePanel/VBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Not connected"
-horizontal_alignment = 2
-
-[node name="Value" type="Label" parent="HBoxContainer/HomePanel/VBoxContainer/IP"]
-layout_mode = 2
-size_flags_horizontal = 3
+horizontal_alignment = 1
 
 [node name="Camera" type="TextureRect" parent="HBoxContainer/HomePanel/VBoxContainer"]
 custom_minimum_size = Vector2(10, 10)
@@ -145,157 +133,22 @@ text = "Feed Now"
 [node name="FadeLabel" parent="HBoxContainer/HomePanel/VBoxContainer" instance=ExtResource("5_3btmq")]
 layout_mode = 2
 
-[node name="SettingsPanel" type="PanelContainer" parent="HBoxContainer"]
+[node name="SettingsPanel" parent="HBoxContainer" instance=ExtResource("6_ooayv")]
 layout_mode = 2
-size_flags_horizontal = 3
-script = ExtResource("4_6mowx")
-
-[node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer/SettingsPanel"]
-layout_mode = 2
-alignment = 1
-
-[node name="Setting1" type="HBoxContainer" parent="HBoxContainer/SettingsPanel/VBoxContainer"]
-layout_mode = 2
-alignment = 1
-
-[node name="Label" type="Label" parent="HBoxContainer/SettingsPanel/VBoxContainer/Setting1"]
-layout_mode = 2
-size_flags_horizontal = 11
-text = "Username (NYI)"
-
-[node name="LineEdit" type="LineEdit" parent="HBoxContainer/SettingsPanel/VBoxContainer/Setting1"]
-layout_mode = 2
-size_flags_horizontal = 7
-placeholder_text = "asdasd"
-
-[node name="Setting2" type="HBoxContainer" parent="HBoxContainer/SettingsPanel/VBoxContainer"]
-layout_mode = 2
-alignment = 1
-
-[node name="Label" type="Label" parent="HBoxContainer/SettingsPanel/VBoxContainer/Setting2"]
-layout_mode = 2
-size_flags_horizontal = 11
-text = "Password (NYI)"
-
-[node name="LineEdit" type="LineEdit" parent="HBoxContainer/SettingsPanel/VBoxContainer/Setting2"]
-layout_mode = 2
-size_flags_horizontal = 7
-placeholder_text = "asdasd"
-secret = true
-
-[node name="Node2" type="Control" parent="HBoxContainer/SettingsPanel/VBoxContainer"]
-custom_minimum_size = Vector2(0, 30)
-layout_mode = 2
-
-[node name="FeedTime" type="HBoxContainer" parent="HBoxContainer/SettingsPanel/VBoxContainer"]
-layout_mode = 2
-alignment = 1
-
-[node name="Label" type="Label" parent="HBoxContainer/SettingsPanel/VBoxContainer/FeedTime"]
-layout_mode = 2
-size_flags_horizontal = 7
-text = "Feed Time"
-
-[node name="Hours" type="SpinBox" parent="HBoxContainer/SettingsPanel/VBoxContainer/FeedTime"]
-layout_mode = 2
-theme_override_icons/updown = SubResource("ImageTexture_o0wrb")
-max_value = 23.0
-
-[node name="Label2" type="Label" parent="HBoxContainer/SettingsPanel/VBoxContainer/FeedTime"]
-layout_mode = 2
-text = ":"
-
-[node name="Minutes" type="SpinBox" parent="HBoxContainer/SettingsPanel/VBoxContainer/FeedTime"]
-layout_mode = 2
-theme_override_icons/updown = SubResource("ImageTexture_femu3")
-max_value = 59.0
-
-[node name="FeedLength" type="HBoxContainer" parent="HBoxContainer/SettingsPanel/VBoxContainer"]
-layout_mode = 2
-alignment = 1
-
-[node name="Label" type="Label" parent="HBoxContainer/SettingsPanel/VBoxContainer/FeedLength"]
-layout_mode = 2
-size_flags_horizontal = 7
-text = "Feed Length"
-
-[node name="Length" type="SpinBox" parent="HBoxContainer/SettingsPanel/VBoxContainer/FeedLength"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_icons/updown = SubResource("ImageTexture_femu3")
-max_value = 14.0
-suffix = "seconds"
-
-[node name="TempWarning" type="HBoxContainer" parent="HBoxContainer/SettingsPanel/VBoxContainer"]
-layout_mode = 2
-alignment = 1
-
-[node name="Label" type="Label" parent="HBoxContainer/SettingsPanel/VBoxContainer/TempWarning"]
-layout_mode = 2
-size_flags_horizontal = 7
-text = "Temperature Warning"
-
-[node name="Min" type="SpinBox" parent="HBoxContainer/SettingsPanel/VBoxContainer/TempWarning"]
-layout_mode = 2
-theme_override_icons/updown = SubResource("ImageTexture_femu3")
-max_value = 120.0
-suffix = "˚"
-
-[node name="Max" type="SpinBox" parent="HBoxContainer/SettingsPanel/VBoxContainer/TempWarning"]
-layout_mode = 2
-theme_override_icons/updown = SubResource("ImageTexture_femu3")
-max_value = 120.0
-suffix = "˚"
-
-[node name="PhWarning" type="HBoxContainer" parent="HBoxContainer/SettingsPanel/VBoxContainer"]
-layout_mode = 2
-alignment = 1
-
-[node name="Label" type="Label" parent="HBoxContainer/SettingsPanel/VBoxContainer/PhWarning"]
-layout_mode = 2
-size_flags_horizontal = 7
-text = "pH Warning"
-
-[node name="Min" type="SpinBox" parent="HBoxContainer/SettingsPanel/VBoxContainer/PhWarning"]
-layout_mode = 2
-theme_override_icons/updown = SubResource("ImageTexture_femu3")
-max_value = 14.0
-
-[node name="Max" type="SpinBox" parent="HBoxContainer/SettingsPanel/VBoxContainer/PhWarning"]
-layout_mode = 2
-theme_override_icons/updown = SubResource("ImageTexture_femu3")
-max_value = 14.0
-
-[node name="Node" type="Control" parent="HBoxContainer/SettingsPanel/VBoxContainer"]
-custom_minimum_size = Vector2(0, 30)
-layout_mode = 2
-
-[node name="Buttons" type="HBoxContainer" parent="HBoxContainer/SettingsPanel/VBoxContainer"]
-layout_mode = 2
-alignment = 1
-
-[node name="Refresh" type="Button" parent="HBoxContainer/SettingsPanel/VBoxContainer/Buttons"]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "Refresh
-"
-
-[node name="Apply" type="Button" parent="HBoxContainer/SettingsPanel/VBoxContainer/Buttons"]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "Apply
-"
 
 [node name="Timers" type="Node" parent="."]
 
 [node name="StatTimer" type="Timer" parent="Timers"]
 
+[connection signal="connected" from="." to="." method="_on_connect_success"]
+[connection signal="disconnected" from="." to="." method="SetRemote" binds= [false]]
 [connection signal="toggled" from="HBoxContainer/SidePanel/VBoxContainer/Hamburger" to="." method="_on_hamburger_toggled"]
 [connection signal="pressed" from="HBoxContainer/SidePanel/VBoxContainer/Home" to="." method="_on_home_pressed"]
 [connection signal="pressed" from="HBoxContainer/SidePanel/VBoxContainer/Settings" to="." method="_on_settings_pressed"]
 [connection signal="pressed" from="HBoxContainer/SidePanel/VBoxContainer/Connect" to="." method="_on_connect_pressed"]
 [connection signal="pressed" from="HBoxContainer/SidePanel/VBoxContainer/Disconnect" to="." method="_on_disconnect_pressed"]
 [connection signal="pressed" from="HBoxContainer/HomePanel/VBoxContainer/FeedButton" to="." method="_on_feed_button_pressed"]
-[connection signal="pressed" from="HBoxContainer/SettingsPanel/VBoxContainer/Buttons/Refresh" to="." method="_on_settings_refresh_pressed"]
-[connection signal="pressed" from="HBoxContainer/SettingsPanel/VBoxContainer/Buttons/Apply" to="." method="_on_settings_apply_pressed"]
+[connection signal="apply_remote" from="HBoxContainer/SettingsPanel" to="." method="_on_settings_remote_apply_pressed"]
+[connection signal="language_updated" from="HBoxContainer/SettingsPanel" to="." method="ChangeLocale"]
+[connection signal="reset_remote" from="HBoxContainer/SettingsPanel" to="." method="RefreshSettings"]
 [connection signal="timeout" from="Timers/StatTimer" to="." method="_on_stat_timer_timeout"]
