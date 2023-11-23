@@ -238,3 +238,12 @@ msgstr "AM"
 
 msgid "TIME_PM"
 msgstr "PM"
+
+msgid "THEME"
+msgstr "Theme"
+
+msgid "THEME_DARK"
+msgstr "Dark"
+
+msgid "THEME_LIGHT"
+msgstr "Light"

@@ -208,3 +208,12 @@ msgstr "午前"
 
 msgid "TIME_PM"
 msgstr "午後"
+
+msgid "THEME"
+msgstr "テーマ"
+
+msgid "THEME_DARK"
+msgstr "暗い"
+
+msgid "THEME_LIGHT"
+msgstr "明るい"
