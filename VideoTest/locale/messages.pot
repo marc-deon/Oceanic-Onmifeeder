@@ -167,3 +167,34 @@ msgstr ""
 
 msgid "Not connected!"
 msgstr ""
+
+msgid "SECONDS_TIME"
+msgid_plural ""
+msgstr ""
+
+msgid "Remote Settings"
+msgstr ""
+
+msgid "Local Settings"
+msgstr ""
+
+msgid "Time Format"
+msgstr ""
+
+msgid "Temperature Format"
+msgstr ""
+
+msgid "12 Hour"
+msgstr ""
+
+msgid "24 Hour"
+msgstr ""
+
+msgid "Fahrenheit"
+msgstr ""
+
+msgid "Celsius"
+msgstr ""
+
+msgid "Save"
+msgstr ""
