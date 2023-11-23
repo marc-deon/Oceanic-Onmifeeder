@@ -25,7 +25,6 @@ from enums import *
 import schedule
 from datetime import datetime
 
-
 SERVER_IP = 'highlyderivative.games'
 SERVER_PORT = 4800
 WEBCAM_WIDTH = 320
@@ -98,9 +97,9 @@ def SaveSettings(message) -> bool:
 
 
 def UpdateSchedule():
-    schedule.clear()
+    schedule.clear("settings")
     time = f"{settings.feed_time[0]:02d}:{settings.feed_time[1]:02d}"
-    schedule.every().day.at(time).do(FeedServo)
+    schedule.every().day.at(time).do(FeedServo).tag("settings")
 
 
 # TODO(#7): Implement servo control
