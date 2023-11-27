@@ -13,14 +13,16 @@ flowchart TD
 
     subgraph server[Server]
         subgraph processes
-            Holepunch
-            Registration
-            pushnotification[Push Notification]
+            Holepunch["Holepunch"]
+            Registration["Registration\n(Spring)"]
+            pushnotification["Push Notification\n(Spring)"]
         end
-        Database[Account Database]
+        Database["Account Database\n(Spring)"]
     end
     
-    
+    embedded -- UDP/enet --- app
+    server -- UDP/enet --- app
+    server -- UDP/enet --- embedded
     
     
     
