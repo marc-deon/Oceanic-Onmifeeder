@@ -1,0 +1,8 @@
+flowchart TD
+    app[App]
+    LAN[LAN]
+    embedded[Embedded]
+
+    app-- "Ping broadcast:4800 with 'DISC'" --> LAN
+    LAN -- Transport ping --> embedded
+    embedded -- "OVER [embedded ip] [HRI]" --> app
