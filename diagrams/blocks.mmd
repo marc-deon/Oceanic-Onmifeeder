@@ -1,0 +1,28 @@
+flowchart TD
+    
+    subgraph embedded[Embedded Product]
+        rpi[Raspberry Pi]
+        rpi -- GPIO --- ph[pH Sensor]
+        rpi -- GPIO --- temp[Temperature sensor]
+        rpi -- GPIO --- servo[Servo]
+        rpi -- ? --- camera[Camera]
+    end
+
+    subgraph app[App]
+    end
+
+    subgraph server[Server]
+        subgraph processes
+            Holepunch
+            Registration
+            pushnotification[Push Notification]
+        end
+        Database[Account Database]
+    end
+    
+    
+    
+    
+    
+    
+    
