@@ -1,0 +1,38 @@
+gantt
+    title Software Development
+    dateFormat  YYYY-MM-DD
+    tickInterval 1week
+    weekday monday
+    
+    section Special days
+    %%                       Startdate   length
+    MLK Jr Day             : 2024-01-15, 1d
+    Spring Break           : 2024-03-11, 7d
+    End of Month 1 Meeting : 2024-2-1, 1d
+    End of Month 2 Meeting : 2024-3-1, 1d
+    End of Month 3 Meeting : 2024-4-1, 1d
+    End of Month 4 Meeting : 2024-5-1, 1d
+
+    section Housekeeping
+    Create virtual environment (venv) : done, 2024-01-08, 1d
+    Create python requirements file   : active, 1d
+    Implement app settings save       : 1d
+    Project cleaned up                : milestone, 0d
+    
+    section Improvements
+    Video performance     : 2024-01-15, 7d
+    Explore enet "errors" : 7d
+    Bug fixes             : 7d
+    Improvements completed: milestone, 0d
+
+    section New Features
+    %% Text                critical name
+    Account registration : crit,    nf1, 2024-02-05, 10d
+    %%                     Relative start
+    Authenticated login  : nf2, after nf1, 10d
+    Bug fixes            : nf3, after nf2, 8d
+    Accounts completed   : milestone, after nf3
+    Push notifications   : 2024-03-18, 7d
+    Bug fixes            : 7d
+    New features complete: milestone, 0d
+    Explore some sort of local setup (maybe) : 14d

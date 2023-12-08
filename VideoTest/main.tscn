@@ -151,4 +151,5 @@ layout_mode = 2
 [connection signal="apply_remote" from="HBoxContainer/SettingsPanel" to="." method="_on_settings_remote_apply_pressed"]
 [connection signal="language_updated" from="HBoxContainer/SettingsPanel" to="." method="ChangeLocale"]
 [connection signal="reset_remote" from="HBoxContainer/SettingsPanel" to="." method="RefreshSettings"]
+[connection signal="theme_updated" from="HBoxContainer/SettingsPanel" to="." method="ChangeTheme"]
 [connection signal="timeout" from="Timers/StatTimer" to="." method="_on_stat_timer_timeout"]

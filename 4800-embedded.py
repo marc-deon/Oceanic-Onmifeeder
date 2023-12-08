@@ -25,7 +25,6 @@ from enums import *
 import schedule
 from datetime import datetime
 
-
 SERVER_IP = 'highlyderivative.games'
 SERVER_PORT = 4800
 WEBCAM_WIDTH = 320
@@ -98,9 +97,9 @@ def SaveSettings(message) -> bool:
 
 
 def UpdateSchedule():
-    schedule.clear()
+    schedule.clear("settings")
     time = f"{settings.feed_time[0]:02d}:{settings.feed_time[1]:02d}"
-    schedule.every().day.at(time).do(FeedServo)
+    schedule.every().day.at(time).do(FeedServo).tag("settings")
 
 
 # TODO(#7): Implement servo control
@@ -310,8 +309,14 @@ def Service() -> None:
     response:bytes = None             # What we will respond with, if anything
     channel:int = None                # What channel to send the response on
     flags = enet.PACKET_FLAG_RELIABLE # Flags to send with the response
+    if event.type == enet.EVENT_TYPE_CONNECT:
+        print("connect event")
+    elif event.type == enet.EVENT_TYPE_DISCONNECT:
+        print("disconnect from", event.peer.address)
 
     match event.type:
+        case enet.EVENT_TYPE_CONNECT:
+            print("connect event to", event.peer)
         case enet.EVENT_TYPE_RECEIVE:
             channel = CHANNELS(event.channelID)
             match channel:
@@ -334,6 +339,8 @@ def Service() -> None:
                     # print("Got channel", channel.name, "data", event.packet.data)
                     response = HandleVideo(event.packet.data)
                     flags = enet.PACKET_FLAG_UNRELIABLE_FRAGMENT | enet.PACKET_FLAG_UNSEQUENCED
+                case _:
+                    print("unknown channel", event.packet.data)
 
     if response:
         event.peer.send(channel, enet.Packet(response, flags))

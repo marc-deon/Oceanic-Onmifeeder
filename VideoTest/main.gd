@@ -4,6 +4,7 @@ extends Control
 @onready var settingsPanel = $HBoxContainer/SettingsPanel
 
 const PLACEHOLDER_MONTH_FORMAT := "numeric"
+#const PLACEHOLDER_MONTH_FORMAT := "full"
 
 signal connected(ip, port)
 signal disconnected
@@ -52,8 +53,11 @@ var embeddedPeer:ENetPacketPeer
 # Holepunch stuff
 var hpPeer:ENetPacketPeer
 var conn_packet:PackedByteArray
+var shouldTryConnect:bool
 var tentativePeerAddr:String
 var tentativeLocalPeerAddr:String
+var tentativePort:int
+var tentativeLocalPort:int
 
 func ConnectToHolepunch() -> void:
 	print("connect to hp")
@@ -85,6 +89,7 @@ func ProcessHolepunch(type_peer_data_channel:Array):
 	match event_type:
 		ENetConnection.EVENT_CONNECT:
 			var peerAddr:String = peer.get_remote_address()
+			print("connect event to", peerAddr)
 			
 			# Connected to holepunch server successfully
 			if peerAddr == hpPeer.get_remote_address():
@@ -96,12 +101,14 @@ func ProcessHolepunch(type_peer_data_channel:Array):
 			elif peerAddr == tentativeLocalPeerAddr:
 				embeddedPeer = peer
 				connected.emit(peer.get_remote_address(), peer.get_remote_port())
+				shouldTryConnect = false
 				SetRemote(true)
 			
 			# Found a valid connection to embedded over internet
 			elif peerAddr == tentativePeerAddr:
 				embeddedPeer = peer
 				connected.emit(peer.get_remote_address(), peer.get_remote_port())
+				shouldTryConnect = false
 				SetRemote(true)
 
 
@@ -109,14 +116,14 @@ func ProcessHolepunch(type_peer_data_channel:Array):
 			var response := Array(peer.get_packet().get_string_from_utf8().split(" "))
 			match response:
 				["CONNTO", var addr, var local, var port, var localport]:
-					hpPeer.peer_disconnect()
+#					hpPeer.peer_disconnect_later()
+					shouldTryConnect = true
 					# Try to connect once over internet
 					tentativePeerAddr = addr
-					
-					enetConnection.connect_to_host(addr, int(port))
+					tentativePort = int(port)
 					# And again over local network
 					tentativeLocalPeerAddr = local
-					enetConnection.connect_to_host(local, int(localport))
+					tentativeLocalPort = int(localport)
 					# We're done with the holepunch peer now
 				_:
 					print("unknown response ", response)
@@ -161,34 +168,38 @@ func ProcessStats(type_peer_data_channel:Array):
 
 	match message['message_type'] as MESSAGE:
 		MESSAGE.GET_STATS:
-			$HBoxContainer/HomePanel/VBoxContainer/Temperature/Value.text = "%2.1f˚" % message['temp']
-			$HBoxContainer/HomePanel/VBoxContainer/Ph/Value.text = "%2.1f" % message['ph']
+			var temp = message['temp']
+			if $HBoxContainer/SettingsPanel.useCelsius:
+				temp = (temp - 32) * 5/9
+			var ph = message['ph']
+			$HBoxContainer/HomePanel/VBoxContainer/Temperature/Value.text = "%2.1f˚" % temp
+			$HBoxContainer/HomePanel/VBoxContainer/Ph/Value.text = "%2.1f" % ph
 			var t = message["last_feed"]
 			
 			# Aside from the month, these are all numbers (we're ignoring AM/PM for now).
 			var year = t[0]
 			# THis gets the localized month, e.g. 10 -> October, or 10 -> Oktobro
-			var _PLACEHOLDER_MONTH_FORMAT = PLACEHOLDER_MONTH_FORMAT
-			var month = tr("MONTH_" + str(t[1]))
+			var month = tr("MONTH_" + str(t[1]), PLACEHOLDER_MONTH_FORMAT)
 			var day = t[2]
 			var hour = t[3]
-			var minute = t[4]
+			var minute = "%02.0f" % t[4]
 			
 			# Good lord 12 hour time sucks ass. wtf?
 			var ampm = ""
-			if TranslationServer.get_locale() == "en_US":
-				month = tr("MONTH_" + str(t[1]), PLACEHOLDER_MONTH_FORMAT)
-				ampm = "AM" if hour < 12 else "PM"
+			if not $HBoxContainer/SettingsPanel.use24Hour:
+				ampm = tr("TIME_AM") if hour < 12 else tr("TIME_PM")
 				hour = int(hour) % 12
 				if hour == 0:
 					hour = 12
-			else:
-				_PLACEHOLDER_MONTH_FORMAT = ""
+#			if 
+#				month = tr("MONTH_" + str(t[1]), PLACEHOLDER_MONTH_FORMAT)
+#			else:
+#				_PLACEHOLDER_MONTH_FORMAT = ""
 			
 			# tr() fetches the apropriate format for the given locale,
 			# and .format supplies the apropriate substiutions
 			$HBoxContainer/HomePanel/VBoxContainer/LastFeed/Value.text =tr(
-				"DATE_TIME_FORMAT", _PLACEHOLDER_MONTH_FORMAT
+				"DATE_TIME_FORMAT", PLACEHOLDER_MONTH_FORMAT
 				).format({ YEAR = year, MONTH = month, DAY = day, HOUR = hour, MINUTE = minute, AMPM = ampm })
 
 
@@ -203,9 +214,18 @@ func RequestVideo():
 		embeddedPeer.send(CHANNEL.VIDEO, PackedByteArray([1]), ENetPacketPeer.FLAG_UNRELIABLE_FRAGMENT | ENetPacketPeer.FLAG_UNSEQUENCED)
 
 
+func TryConnect():
+	enetConnection.connect_to_host(tentativePeerAddr,  tentativePort)
+	enetConnection.connect_to_host(tentativeLocalPeerAddr, tentativeLocalPort)
+
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(_delta):
 	
+	# I don't love this, but... it does work.
+	# Fixes the issue of:
+	# When going through NAT, the first connection attempt is dropped upon arrival because no outbound data has been sent yet. 
+	if shouldTryConnect:
+		TryConnect()
 	var type_peer_data_channel = enetConnection.service(0)
 
 	var event_type:ENetConnection.EventType = type_peer_data_channel[0]
@@ -233,6 +253,7 @@ func _process(_delta):
 			ProcessVideo(type_peer_data_channel)
 		
 		[ENetConnection.EVENT_DISCONNECT, _]:
+			print("discon event")
 			if embeddedPeer and peer == embeddedPeer:
 				disconnected.emit()
 		
@@ -312,7 +333,7 @@ func _on_settings_remote_apply_pressed():
 
 
 func _on_feed_button_pressed():
-	if embeddedPeer:
+	if embeddedPeer and embeddedPeer.get_state() == embeddedPeer.STATE_CONNECTED:
 		$HBoxContainer/HomePanel/VBoxContainer/FadeLabel.fade_in("Feeding...")
 		var packet = JSON.stringify({"message_type": MESSAGE.MANUAL_FEED}).to_utf8_buffer()
 		embeddedPeer.send(CHANNEL.CONTROL, packet, ENetPacketPeer.FLAG_RELIABLE)
@@ -332,3 +353,10 @@ func ChangeLocale(locale:String):
 	TranslationServer.set_locale(locale)
 	display_ip()
 
+
+const lighttheme = preload("res://LightTheme.tres")
+func ChangeTheme(light):
+	if light:
+		theme = lighttheme
+	else:
+		theme = null

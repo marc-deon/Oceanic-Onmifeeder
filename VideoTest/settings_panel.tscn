@@ -230,6 +230,25 @@ popup/item_0/id = 0
 popup/item_1/text = "Celsius"
 popup/item_1/id = 1
 
+[node name="Theme" type="HBoxContainer" parent="Tabs/Local Settings/List"]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="Tabs/Local Settings/List/Theme"]
+layout_mode = 2
+size_flags_horizontal = 7
+text = "THEME"
+
+[node name="ItemList" type="OptionButton" parent="Tabs/Local Settings/List/Theme"]
+layout_mode = 2
+size_flags_horizontal = 3
+item_count = 2
+selected = 0
+popup/item_0/text = "THEME_DARK"
+popup/item_0/id = 0
+popup/item_1/text = "THEME_LIGHT"
+popup/item_1/id = 1
+
 [node name="Spacer3" type="Control" parent="Tabs/Local Settings/List"]
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
@@ -256,4 +275,5 @@ text = "Save"
 [connection signal="item_selected" from="Tabs/Local Settings/List/Languages/ItemList" to="." method="_on_language_updated"]
 [connection signal="item_selected" from="Tabs/Local Settings/List/TimeFormat/ItemList" to="." method="on_time_format_updated"]
 [connection signal="item_selected" from="Tabs/Local Settings/List/TempFormat/ItemList" to="." method="on_temp_format_updated"]
+[connection signal="item_selected" from="Tabs/Local Settings/List/Theme/ItemList" to="." method="on_theme_updated"]
 [connection signal="pressed" from="Tabs/Local Settings/List/Buttons2/Save" to="." method="_on_save_local_pressed"]

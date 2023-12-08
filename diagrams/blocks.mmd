@@ -1,0 +1,30 @@
+flowchart TD
+    
+    subgraph embedded[Embedded Product]
+        rpi[Raspberry Pi]
+        rpi -- GPIO --- ph[pH Sensor]
+        rpi -- GPIO --- temp[Temperature sensor]
+        rpi -- GPIO --- servo[Servo]
+        rpi -- ? --- camera[Camera]
+    end
+
+    subgraph app[App]
+    end
+
+    subgraph server[Server]
+        subgraph processes
+            Holepunch["Holepunch"]
+            Registration["Registration\n(Spring)"]
+            pushnotification["Push Notification\n(Spring)"]
+        end
+        Database["Account Database\n(Spring)"]
+    end
+    
+    embedded -- UDP/enet --- app
+    server -- UDP/enet --- app
+    server -- UDP/enet --- embedded
+    
+    
+    
+    
+    
