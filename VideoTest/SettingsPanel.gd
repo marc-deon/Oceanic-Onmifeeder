@@ -25,11 +25,18 @@ func UpdateSettings(message:Dictionary):
 
 
 func GetSettings() -> Dictionary:
+	var foo1 = $"Tabs/Remote Settings/List/FeedTime/Hours".value
+	var foo2 = $"Tabs/Remote Settings/List/FeedTime/Minutes".value
+	var foo3 = $"Tabs/Remote Settings/List/FeedLength/Length".value
+	var foo4 = $"Tabs/Remote Settings/List/TempWarning/Min".value
+	var foo5 = $"Tabs/Remote Settings/List/TempWarning/Max".value
+	var foo6 = $"Tabs/Remote Settings/List/PhWarning/Min".value
+	var foo7 = $"Tabs/Remote Settings/List/PhWarning/Max".value
 	return {
-	"feed_time":    [$"Tabs/Remote Settings/List/FeedTime/Hours".value, $"Tabs/Remote Settings/List/FeedTime/Minutes".value],
-	"feed_length":  $"Tabs/Remote Settings/List/FeedLength/Length".value,
-	"temp_warning": [$"Tabs/Remote Settings/List/TempWarning/Min".value, $"Tabs/Remote Settings/List/TempWarning/Max".value],
-	"ph_warning":   [$"Tabs/Remote Settings/List/PhWarning/Min".value, $"Tabs/Remote Settings/PhWarning/Max".value]
+	"feed_time":    [foo1, foo2],
+	"feed_length":  foo3,
+	"temp_warning": [foo4, foo5],
+	"ph_warning":   [foo6, foo7]
 	}
 
 
