@@ -16,7 +16,6 @@ clip_tabs = false
 use_hidden_tabs_for_min_size = true
 
 [node name="Remote Settings" type="MarginContainer" parent="Tabs"]
-visible = false
 layout_mode = 2
 theme_override_constants/margin_left = 10
 theme_override_constants/margin_top = 10
@@ -162,6 +161,7 @@ text = "Apply
 "
 
 [node name="Local Settings" type="MarginContainer" parent="Tabs"]
+visible = false
 layout_mode = 2
 theme_override_constants/margin_left = 10
 theme_override_constants/margin_top = 10
