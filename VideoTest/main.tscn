@@ -5,7 +5,7 @@
 [ext_resource type="Texture2D" uid="uid://cxh1i2f5w3chh" path="res://Hamburger_icon.svg" id="2_m6ch3"]
 [ext_resource type="Script" path="res://CameraDisplay.gd" id="3_te02d"]
 [ext_resource type="PackedScene" uid="uid://mcfhr3opdp2j" path="res://FadeLabel.tscn" id="5_3btmq"]
-[ext_resource type="PackedScene" uid="uid://dpyivff23vrii" path="res://settings_panel.tscn" id="6_ooayv"]
+[ext_resource type="PackedScene" path="res://settings_panel.tscn" id="6_ooayv"]
 
 [node name="ControlRoot" type="PanelContainer"]
 anchors_preset = 15
