@@ -1,0 +1,8 @@
+sequenceDiagram
+    App->>+Server: Begin registration proess
+    App->>+Server: Desired user/pass
+    Server->>+Database: Check if username is taken
+    Database->>+Database: Create user + pass hash
+    Database-->>-Server: OK or not OK
+    Server-->>-App: OK or taken
+    Server-->>-App: End registration process

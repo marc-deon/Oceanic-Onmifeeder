@@ -198,3 +198,18 @@ msgstr ""
 
 msgid "Save"
 msgstr ""
+
+msgid "TIME_AM"
+msgstr ""
+
+msgid "TIME_PM"
+msgstr ""
+
+msgid "THEME"
+msgstr ""
+
+msgid "THEME_DARK"
+msgstr ""
+
+msgid "THEME_LIGHT"
+msgstr ""

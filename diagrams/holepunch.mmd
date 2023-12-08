@@ -1,0 +1,10 @@
+flowchart LR
+    embedded[Embedded]
+    server[Server]
+    app[App]
+    embedded -- "(1) Request Register" --> server
+    server -- "(2) OK" --> embedded
+    app -- "(3) Request search" --> server
+    server -- "(4) Give location of embedded" --> app
+    server -- "(4) Give location of app" --> embedded
+    app <-- "(5) Connect" --> embedded
