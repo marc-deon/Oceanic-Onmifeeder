@@ -47,7 +47,7 @@ const hp_addr := "highlyderivative.games"
 const hp_port := 4800
 var hp_key    := "poseidon"
 
-var enetConnection:ENetConnection = ENetConnection.new()
+var enetConnection:ENetConnection
 var embeddedPeer:ENetPacketPeer
 
 # Holepunch stuff
@@ -60,9 +60,9 @@ var tentativePort:int
 var tentativeLocalPort:int
 
 func ConnectToHolepunch() -> void:
+	print("connect to hp")
 	# Connect to holepunch server
 	hpPeer = enetConnection.connect_to_host(hp_addr, hp_port)
-	print("connect to hp")
 	
 	# This is the request to connect that we will send later
 	var s = " ".join(["CONN", IP.get_local_addresses()[0], hp_key, enetConnection.get_local_port()])
@@ -71,8 +71,10 @@ func ConnectToHolepunch() -> void:
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
+	enetConnection = ENetConnection.new()
 	# Bind to all IPv4 addresses, any port; we're connecting, not listening
-	enetConnection.create_host_bound("0.0.0.0", 0)
+	var e = enetConnection.create_host_bound("0.0.0.0", 0)
+	print(e)
 	
 	# Start with the home panel visible and the side panel minimized
 	_on_home_pressed()
@@ -257,6 +259,9 @@ func _process(_delta):
 		
 		[ENetConnection.EVENT_NONE, _]:
 			pass
+		
+		[ENetConnection.EVENT_ERROR, _]:
+			printerr("Enet error occurred")
 		
 		[var ev, var chan]:
 			print("unknown event-channel ", ev, " ", chan)
