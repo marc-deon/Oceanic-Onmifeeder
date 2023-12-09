@@ -5,7 +5,7 @@ flowchart TD
         rpi -- GPIO --- ph[pH Sensor]
         rpi -- GPIO --- temp[Temperature sensor]
         rpi -- GPIO --- servo[Servo]
-        rpi -- ? --- camera[Camera]
+        rpi -- RPICP --- camera[Camera]
     end
 
     subgraph app[App]
