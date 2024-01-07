@@ -73,8 +73,8 @@ func ConnectToHolepunch() -> void:
 func _ready():
 	enetConnection = ENetConnection.new()
 	# Bind to all IPv4 addresses, any port; we're connecting, not listening
-	var e = enetConnection.create_host_bound("0.0.0.0", 0)
-	print(e)
+	enetConnection.create_host_bound("0.0.0.0", 0)
+#	enetConnection.create_host_bound("192.168.0.11", 4850)
 	
 	# Start with the home panel visible and the side panel minimized
 	_on_home_pressed()
