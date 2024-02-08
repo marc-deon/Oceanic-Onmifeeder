@@ -20,8 +20,8 @@ SERVER_PORT = 4800
 enetHost:enet.Host = None
 enetHost = enet.Host(enet.Address(None, 0), peerCount=1)
 
+acquired_token = None
 
-   
 def get_user_pass():
     while not (username := input("Username: ").strip()):
         pass
@@ -30,8 +30,7 @@ def get_user_pass():
     return username, password
 
 def register() -> bool:
-    print("reg")
-    username, password = get_user_pass()    
+    username, password = get_user_pass()
     hpServerPeer = enetHost.connect(enet.Address(SERVER_IP, SERVER_PORT), 1)
 
     while True:
@@ -40,18 +39,22 @@ def register() -> bool:
             s = f"REGISTER {username} {password}".encode()
             hpServerPeer.send(0, enet.Packet(s, enet.PACKET_FLAG_RELIABLE))
         if event.type == enet.EVENT_TYPE_RECEIVE:
-            message = event.packet.decode().split()
-            if message == "REGISTRATION OK":
+            message = json.loads(event.packet.data.decode())
+            if message['error_type'] == "OK":
                 print("Registration successful")
-                return True
+                global acquired_token
+                acquired_token = message['message']
+                event.peer.disconnect()
             else:
                 print("Registration error:", message)
+                event.peer.disconnect()
+        if event.type == enet.EVENT_TYPE_DISCONNECT:
                 return True
 
-# TODO: Receive json instead of simple string
+
 def login() -> bool:
-    print("logi")
-    username, password = get_user_pass()    
+    global acquired_token
+    username, password = get_user_pass()
     hpServerPeer = enetHost.connect(enet.Address(SERVER_IP, SERVER_PORT), 1)
 
     while True:
@@ -60,21 +63,32 @@ def login() -> bool:
             s = f"LOGIN {username} {password}".encode()
             hpServerPeer.send(0, enet.Packet(s, enet.PACKET_FLAG_RELIABLE))
         if event.type == enet.EVENT_TYPE_RECEIVE:
-            message = event.packet.decode().split()
-            if message == "LOGIN OK":
+            message = json.loads(event.packet.data.decode())
+            print("recv", message)
+            if message['error_type'] == "OK":
                 print("Login successful")
-                return True
+                global acquired_token
+                acquired_token = message['message']
+                event.peer.disconnect()
             else:
-                print("Login error:", message)
-                return True 
+                print("Registration error:", message)
+                event.peer.disconnect()
+        if event.type == enet.EVENT_TYPE_DISCONNECT:
+                return True
+
+
+def display_token():
+    print("Token info is", acquired_token)
+    return True
 
 
 def main() -> None:
     options = [
         ("Register for account", register),
         ("Test login", login),
+        ("Display token", display_token),
         ("Exit", lambda: False)
-    ]  
+    ]
 
     while True:
 
@@ -85,6 +99,7 @@ def main() -> None:
         result = options[i][1]()
         if not result:
             break
+        print()
 
 main()
 
