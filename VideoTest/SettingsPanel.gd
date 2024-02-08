@@ -14,6 +14,10 @@ enum TIME_FORMAT {TIME_12, TIME_24}
 enum TEMP_FORMAT {TEMP_F, TEMP_C}
 enum THEME {THEME_DARK, THEME_LIGHT}
 
+func GetUserPass():
+	var user = $"Tabs/Remote Settings/List/Username/LineEdit".text
+	var password = $"Tabs/Remote Settings/List/Password/LineEdit".text
+	return [user, password]
 
 func _ready():
 	ApplyLocalSettings(ReadLocalSettings())
