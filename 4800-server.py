@@ -15,6 +15,7 @@ HOST_IP = 'highlyderivative.games'
 HOST_PORT = 4800
 socket_address = (HOST_IP, HOST_PORT)
 
+
 def enet_main():
     print("Entering enet main")
     userdict = {} # username -> ip ip port port
@@ -37,9 +38,22 @@ def enet_main():
                         event.peer.send(CHANNELS.HOLEPUNCH, enet.Packet(b"HOSTING", enet.PACKET_FLAG_RELIABLE))
                         print("Sent HOSTING")
 
-                    case ["CONN", local, username, localport]:
-                        if username in userdict:
-                            print("username", username, "IS present")
+                    # TODO: Use password
+                    case ["CONN", local, username, password, localport]:
+                            if username not in userdict:
+                                s = "USERNAME_NOT_PRESENT".encode()
+                                event.peer.send(0, enet.Packet(s, enet.PACKET_FLAG_RELIABLE))
+                                print("Username", username, "not present")
+                                continue
+
+
+                            # TODO: Authenticate here
+                            token = server_TryLogin(username, password)
+                            if not isinstance(token, Token):
+                                s = "AUTHENTICATION FAILED".encode()
+                                event.peer.send(0, enet.Packet(s, enet.PACKET_FLAG_RELIABLE))
+                                continue
+
                             # Get the info to send
                             hostlocal, hostaddr, hostport, hostlocalport = userdict[username]
 
@@ -57,10 +71,6 @@ def enet_main():
                             #userdict.pop(username)
                             #hostdict.pop(username).disconnect_later()
                             event.peer.disconnect_later()
-                        else:
-                            s = "USERNAME_NOT_PRESENT".encode()
-                            event.peer.send(CHANNELS.HOLEPUNCH, enet.Packet(s, enet.PACKET_FLAG_RELIABLE))
-                            print("Username", username, "not present")
 
                     case ["REGISTER", username, password]:
                             print("Register function impl. in progress")
