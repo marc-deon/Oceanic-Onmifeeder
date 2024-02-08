@@ -1,4 +1,5 @@
 extends PanelContainer
+# TODO: Probably a lot of this file should moved to a settings singleton.
 signal language_updated(locale:String)
 signal theme_updated(light:bool)
 signal apply_remote
@@ -6,6 +7,62 @@ signal reset_remote
 
 var use24Hour:bool
 var useCelsius:bool
+var _useLight:bool # This is only a local variable.
+
+const _languages := ["en_US", "ja", "eo"]
+enum TIME_FORMAT {TIME_12, TIME_24}
+enum TEMP_FORMAT {TEMP_F, TEMP_C}
+enum THEME {THEME_DARK, THEME_LIGHT}
+
+
+func _ready():
+	ApplyLocalSettings(ReadLocalSettings())
+
+
+# Read the local settings file and return a corrosponding dictionary
+func ReadLocalSettings() -> Dictionary:
+	var file := FileAccess.open("user://LocalSettings.json", FileAccess.READ)
+	if file:
+		return JSON.parse_string(file.get_as_text())
+	else:
+		# error
+		# Return default
+		return {
+			'language': "en_US",
+			'time_format': TIME_FORMAT.TIME_12,
+			'temp': TEMP_FORMAT.TEMP_F,
+			'theme': THEME.THEME_DARK
+		}
+
+
+# Apply local settings from a given dictionary
+func ApplyLocalSettings(settings:Dictionary) -> void:
+	var lang_index = _languages.find(settings["language"])
+	$"Tabs/Local Settings/List/Languages/ItemList".select(lang_index)
+	_on_language_updated(-1, settings["language"])
+	$"Tabs/Local Settings/List/TimeFormat/ItemList".select(settings["time_format"])
+	on_time_format_updated(settings["time_format"])
+	$"Tabs/Local Settings/List/TempFormat/ItemList".select(settings["temp"])
+	on_temp_format_updated(settings["temp"])
+	$"Tabs/Local Settings/List/Theme/ItemList".select(settings["theme"])
+	on_theme_updated(settings["theme"])
+
+
+# Write currently applied local settings to file, return error
+func WriteLocalSettings() -> bool:
+	var d := {
+			'language': TranslationServer.get_locale(),
+			'time_format': 	int(use24Hour),
+			'temp': 		int(useCelsius),
+			'theme': 		int(_useLight)
+		}
+	var file := FileAccess.open("user://LocalSettings.json", FileAccess.WRITE)
+	if file:
+		file.store_string(JSON.stringify(d))
+		return false
+	else:
+		return true
+
 
 func UpdateSettings(message:Dictionary):
 	var hours = message["feed_time"][0]
@@ -51,15 +108,8 @@ func SetRemote(connected:bool):
 	$"Tabs/Remote Settings/List/PhWarning/Max".editable = connected
 
 
-const _languages := ["en_US", "ja", "eo"]
-func _on_language_updated(index):
-	language_updated.emit(_languages[index])
-	var widget = $"Tabs/Remote Settings/List/FeedLength/Length"
-	widget.suffix = tr_n("SECONDS_TIME", "", widget.value)
-
-
 func _on_save_local_pressed():
-	pass # Replace with function body.
+	WriteLocalSettings()
 
 
 func _on_apply_remote_pressed():
@@ -72,17 +122,26 @@ func _on_reset_remote_pressed():
 
 func _on_feed_length_value_changed(value):
 	$"Tabs/Remote Settings/List/FeedLength/Length".suffix = tr_n("SECONDS_TIME", "", value)
-	pass # Replace with function body.
 
+
+## Local Settings
+
+func _on_language_updated(index, lang=""):
+	# If a language is provided via string, index will be unused
+	if not lang:
+		lang = _languages[index]
+	language_updated.emit(lang)
+	var widget = $"Tabs/Remote Settings/List/FeedLength/Length"
+	widget.suffix = tr_n("SECONDS_TIME", "", widget.value)
 
 func on_time_format_updated(index):
 	use24Hour = bool(index)
 	print("use24Hour ", use24Hour)
-
 
 func on_temp_format_updated(index):
 	useCelsius = bool(index)
 	print("useCelsius ", useCelsius)
 
 func on_theme_updated(index):
-	theme_updated.emit(index == 1)
+	_useLight = index
+	theme_updated.emit(index == THEME.THEME_LIGHT)
