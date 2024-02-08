@@ -45,7 +45,7 @@ enum MESSAGE {
 
 const hp_addr := "highlyderivative.games"
 const hp_port := 4800
-var hp_key    := "poseidon"
+#var hp_key    := "poseidon"
 
 var enetConnection:ENetConnection
 var embeddedPeer:ENetPacketPeer
@@ -59,13 +59,19 @@ var tentativeLocalPeerAddr:String
 var tentativePort:int
 var tentativeLocalPort:int
 
-func ConnectToHolepunch() -> void:
+func ConnectToHolepunch(user, password) -> void:
 	print("connect to hp")
 	# Connect to holepunch server
 	hpPeer = enetConnection.connect_to_host(hp_addr, hp_port)
 	
 	# This is the request to connect that we will send later
-	var s = " ".join(["CONN", IP.get_local_addresses()[0], hp_key, enetConnection.get_local_port()])
+	var s = " ".join([
+		"CONN",							# command
+		IP.get_local_addresses()[0],	# Local IP
+		user,							# Username
+		password,						# Password
+		enetConnection.get_local_port()	# Local port
+	])
 	conn_packet = s.to_utf8_buffer()
 
 
@@ -304,7 +310,8 @@ func SetRemote(connected:bool):
 
 
 func _on_connect_pressed():
-	ConnectToHolepunch()
+	var userpass = $HBoxContainer/SettingsPanel.GetUserPass()
+	ConnectToHolepunch(userpass[0], userpass[1])
 	$HBoxContainer/HomePanel/VBoxContainer/IP.text = "Connecting..."
 
 
