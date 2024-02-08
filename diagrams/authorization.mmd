@@ -1,0 +1,10 @@
+sequenceDiagram
+    User->>+Client: Login w/ password
+    Client->>+Server: Request authorization token
+    Server->>-Server: Gen RNG. Hash RNG and store in database.
+    Server-->>+Client: Return RNG as token.
+    Client->>-Client: Store token.
+    User->>+Client: Auto login
+    Client->>+Server: send token.
+    Server->>+Server: Check hash against database.
+    Server-->>-Client: Success/Error.
