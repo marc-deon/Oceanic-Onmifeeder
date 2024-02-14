@@ -25,7 +25,8 @@ class MESSAGE(enum.IntEnum):
     NONE = 0
     GET_SETTINGS = enum.auto()
     GET_STATS = enum.auto()
-    MANUAL_FEED = enum.auto()
+    MANUAL_FEED_OPEN = enum.auto()
+    MANUAL_FEED_CLOSE = enum.auto()
     SET_FEED_TIME = enum.auto()
     SET_FEED_LENGTH = enum.auto()
     SET_TEMP_WARNING = enum.auto()
