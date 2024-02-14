@@ -4,3 +4,4 @@ imutils==0.5.4
 numpy==1.26.3
 opencv-python==4.9.0.80
 RPi.GPIO==0.7.1
+schedule==1.2.1
