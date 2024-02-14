@@ -141,6 +141,7 @@ layout_mode = 2
 [node name="StatTimer" type="Timer" parent="Timers"]
 
 [connection signal="connected" from="." to="." method="_on_connect_success"]
+[connection signal="disconnected" from="." to="." method="on_disconnect"]
 [connection signal="toggled" from="HBoxContainer/SidePanel/VBoxContainer/Hamburger" to="." method="_on_hamburger_toggled"]
 [connection signal="pressed" from="HBoxContainer/SidePanel/VBoxContainer/Home" to="." method="_on_home_pressed"]
 [connection signal="pressed" from="HBoxContainer/SidePanel/VBoxContainer/Settings" to="." method="_on_settings_pressed"]
