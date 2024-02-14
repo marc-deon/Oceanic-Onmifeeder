@@ -4,6 +4,7 @@
 - opencv: https://pypi.org/project/opencv-python/
 - imutils: https://pypi.org/project/imutils/
 - RPI.GPIO: https://pypi.org/project/RPi.GPIO/
+- schedule: https://pypi.org/project/schedule/
 
 # Project Structure
 At the moment there are three-ish projects in here, each with multiple parts.
