@@ -1,5 +1,6 @@
 from time import sleep
 from threading import Thread
+import RPi.GPIO as GPIO
 
 #####################################################################
 #  FILE API  #
