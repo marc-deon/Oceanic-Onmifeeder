@@ -260,6 +260,7 @@ func _process(_delta):
 		
 		[ENetConnection.EVENT_DISCONNECT, _]:
 			print("discon event")
+			print("embeddedpeer, peer =", embeddedPeer, peer)
 			if embeddedPeer and peer == embeddedPeer:
 				disconnected.emit()
 		
@@ -308,6 +309,9 @@ func SetRemote(connected:bool):
 	
 	$HBoxContainer/SettingsPanel.SetRemote(connected)
 
+func on_disconnect():
+	$HBoxContainer/HomePanel/VBoxContainer/IP.text = "Not connected"
+	SetRemote(false)
 
 func _on_connect_pressed():
 	var userpass = $HBoxContainer/SettingsPanel.GetUserPass()
@@ -316,7 +320,7 @@ func _on_connect_pressed():
 
 
 func _on_disconnect_pressed():
-	$HBoxContainer/HomePanel/VBoxContainer/IP.text = "Not connected"
+	on_disconnect()
 	if embeddedPeer:
 		embeddedPeer.peer_disconnect()
 

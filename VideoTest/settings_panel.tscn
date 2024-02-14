@@ -37,6 +37,7 @@ text = "Username (NYI)"
 [node name="LineEdit" type="LineEdit" parent="Tabs/Remote Settings/List/Username"]
 layout_mode = 2
 size_flags_horizontal = 7
+text = "poseidon"
 placeholder_text = "asdasd"
 
 [node name="Password" type="HBoxContainer" parent="Tabs/Remote Settings/List"]
@@ -51,6 +52,7 @@ text = "Password (NYI)"
 [node name="LineEdit" type="LineEdit" parent="Tabs/Remote Settings/List/Password"]
 layout_mode = 2
 size_flags_horizontal = 7
+text = "oceanman"
 placeholder_text = "asdasd"
 secret = true
 
