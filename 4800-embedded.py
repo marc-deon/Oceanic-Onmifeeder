@@ -24,6 +24,7 @@ import socket_convenience as sc
 from enums import *
 import schedule
 from datetime import datetime
+import message_queue
 
 SERVER_IP = 'highlyderivative.games'
 SERVER_PORT = 4800
@@ -103,15 +104,15 @@ def UpdateSchedule():
 
 
 # TODO(#7): Implement servo control
-def FeedServo() -> bool:
+def FeedServo() -> None:
     """Open and close the feed door"""
     # if not empty?
     t = datetime.now()
     settings.last_feed = [t.year, t.month, t.day, t.hour, t.minute]
-    return servo_control.Feed(settings.feed_length)
+    servo_control.Feed(settings.feed_length)
 
 
-def HandleControl(message:bytes) -> dict:
+def HandleControl(message:bytes) -> None:
     """Deal with the bulk of ENet message, i.e. managing settings and manual feeding"""
     ## Message format TBD, but maybe something like this?
     ## GET_SETTINGS -> OK, dict
@@ -135,17 +136,18 @@ def HandleControl(message:bytes) -> dict:
                 "feed_time": settings.feed_time,
                 "feed_length": settings.feed_length,
                 "temp_warning": settings.temp_warning,
-                "ph_warning": settings.ph_warning,
+                "ph_warning": settings.ph_warning
             }
             print(response)
 
         # Manually trigger feeding
-        case MESSAGE.MANUAL_FEED:
-            ok = FeedServo()
-            if ok:
-                response = {'error': ERROR.OK, "message_type": MESSAGE.MANUAL_FEED}
-            else:
-                response = {'error': ERROR.FEED_ERROR, "message_type": MESSAGE.MANUAL_FEED}
+        case MESSAGE.MANUAL_FEED_OPEN:
+            # ok =
+            FeedServo()
+            #if ok:
+            #    response = {'error': ERROR.OK, "message_type": MESSAGE.MANUAL_FEED}
+            #else:
+            #    response = {'error': ERROR.FEED_ERROR, "message_type": MESSAGE.MANUAL_FEED}
 
 
         # Set a daily feed time
@@ -210,15 +212,25 @@ def HandleControl(message:bytes) -> dict:
             else:
                 response = {'error':ERROR.SAVE_ERROR, 'message_type':MESSAGE.SAVE_SETTINGS}
     
-    return response
+    if response:
+        response["channel"] = CHANNELS.CONTROL
+        message_queue.Add(response)
 
 
 # TODO(#8): Implement stats (temp, ph) reading from hardware
-def HandleStats(message:bytes) -> dict:
+useRandomStats = True
+def HandleStats(message:bytes) -> None:
     """Return current temp, ph"""
-    temp = random.randint(75, 80)
-    ph =  7 + 2 * random.random() - 1
-    return {'message_type':MESSAGE.GET_STATS, 'error': ERROR.OK, 'temp': temp, 'ph': ph, 'last_feed': settings.last_feed}
+    
+    if useRandomStats:
+        temp = random.randint(75, 80)
+        ph =  7 + 2 * random.random() - 1
+    else: # todo
+        temp = random.randint(75, 80)
+        ph =  7 + 2 * random.random() - 1
+
+    m = {'message_type':MESSAGE.GET_STATS, 'error': ERROR.OK, 'temp': temp, 'ph': ph, 'last_feed': settings.last_feed, "channel": CHANNELS.STATS}
+    message_queue.Add(m)
 
 
 demo_vid = None
@@ -289,7 +301,7 @@ def RegisterForHolepunch() -> None:
     
 
 
-def HandleHolepunch(b:bytes) -> str:
+def HandleHolepunch(b:bytes) -> None:
     message = b.decode().split(" ")
     print("handling holepunch", message)
     match message:
@@ -299,20 +311,30 @@ def HandleHolepunch(b:bytes) -> str:
             print("expecting", addr, local, int(port), int(localport))
         case _:
             print("Unknown HP format")
-    return ""
+
+
+# TODO: Let's not bother for senior project, but in theory this should instead
+# be passed along through the functions called in Service()
+mobile_peer = None
 
 
 def Service() -> None:
     """Main loop"""
+    global mobile_peer
     schedule.run_pending()
     event = enetHost.service(500)
-    response:bytes = None             # What we will respond with, if anything
+    response:bytes = None             # What we will respond with, if anything.
+                                      # For the most part None; this is handled
+                                      # by message_queue, except for video.
     channel:int = None                # What channel to send the response on
     flags = enet.PACKET_FLAG_RELIABLE # Flags to send with the response
     if event.type == enet.EVENT_TYPE_CONNECT:
         print("connect event")
+        mobile_peer = event.peer
     elif event.type == enet.EVENT_TYPE_DISCONNECT:
         print("disconnect from", event.peer.address)
+        if event.peer == mobile_peer:
+            mobile_peer = None
 
     match event.type:
         case enet.EVENT_TYPE_CONNECT:
@@ -322,18 +344,18 @@ def Service() -> None:
             match channel:
                 case CHANNELS.HOLEPUNCH:
                     # print("Got channel", channel.name, "data", event.packet.data)
-                    response = HandleHolepunch(event.packet.data)
-                    #response = json.dumps(response).encode()
+                    HandleHolepunch(event.packet.data)
                 
                 case CHANNELS.CONTROL:
                     # print("Got channel", channel.name, "data", event.packet.data)
-                    response = HandleControl(event.packet.data)
-                    response = json.dumps(response).encode()
+                    HandleControl(event.packet.data)
+                    #response = HandleControl(event.packet.data)
+                    #response = json.dumps(response).encode()
                 
                 case CHANNELS.STATS:
                     # print("Got channel", channel.name, "data", event.packet.data)
-                    response = HandleStats(event.packet.data)
-                    response = json.dumps(response).encode()
+                    HandleStats(event.packet.data)
+                    #response = json.dumps(response).encode()
                 
                 case CHANNELS.VIDEO:
                     # print("Got channel", channel.name, "data", event.packet.data)
@@ -345,6 +367,15 @@ def Service() -> None:
     if response:
         event.peer.send(channel, enet.Packet(response, flags))
 
+def flush_queue():
+    flags = enet.PACKET_FLAG_RELIABLE # Flags to send with the response
+    if mobile_peer:
+        while not message_queue.Empty():
+            message = message_queue.Get()
+            channel = message.pop('channel')
+            print("Flushed message", message)
+            s = json.dumps(message).encode()
+            mobile_peer.send(channel, enet.Packet(s, flags))
 
 def main() -> None:
     LoadSettings()
@@ -352,6 +383,7 @@ def main() -> None:
     RegisterForHolepunch()
     while True:
         Service()
+        flush_queue()
 
 
 main()
