@@ -234,7 +234,7 @@ def HandleStats(message:bytes) -> None:
 
 
 demo_vid = None
-def HandleVideo(message:bytes, use_demo:bool=True) -> bytes:
+def HandleVideo(message:bytes, use_demo:bool=False) -> bytes:
     """Capture a video frame from the webcam and prepare it to be send to the app"""
     global demo_vid
 
@@ -244,15 +244,25 @@ def HandleVideo(message:bytes, use_demo:bool=True) -> bytes:
         vid = demo_vid
     else:
         if not demo_vid:
-            demo_vid = cv2.VideoCapture(0) # RPI webcam
-            demo_vid.set(cv2.CAP_PROP_FPS, 30)
-            demo_vid.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+            # demo_vid = cv2.VideoCapture(0, cv2.CAP_V4L) # RPI webcam = 1, USB webcam = 0? -1 for auto?
+            #demo_vid = cv2.VideoCapture('/dev/video0', cv2.CAP_FFMPEG)
+            # TODO: We really, really want to read directly from the file.
+            demo_vid = cv2.VideoCapture('udp://127.0.0.1:6969', cv2.CAP_FFMPEG)
+            #demo_vid.set(3, 640)
+            #demo_vid.set(4, 480)
+            #demo_vid.set(10, 100)
+            #demo_vid.set(cv2.CAP_PROP_FPS, 30)
+            #demo_vid.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
         vid = demo_vid
+
+    if not vid.isOpened():
+        return None
 
     # Read next frame
     nextFrameValid, frame = vid.read()
 
     if not nextFrameValid:
+        print("next frame not valid")
         if use_demo:
             # Loop
             demo_vid = cv2.VideoCapture("take_it_yeesy.mp4")
@@ -260,7 +270,7 @@ def HandleVideo(message:bytes, use_demo:bool=True) -> bytes:
         return None
 
     # Resize
-    frame = imutils.resize(frame,width=WEBCAM_WIDTH)
+    #frame = imutils.resize(frame,width=WEBCAM_WIDTH)
 
     # Encode as jpeg
     encoded, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
