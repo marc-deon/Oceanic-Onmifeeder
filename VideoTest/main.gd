@@ -59,6 +59,9 @@ var tentativeLocalPeerAddr:String
 var tentativePort:int
 var tentativeLocalPort:int
 
+var _demo_temp:float
+var _demo_flag:=false
+
 func ConnectToHolepunch(user, password) -> void:
 	print("connect to hp")
 	# Connect to holepunch server
@@ -177,6 +180,9 @@ func ProcessStats(type_peer_data_channel:Array):
 			var temp = message['temp']
 			if $HBoxContainer/SettingsPanel.useCelsius:
 				temp = (temp - 32) * 5/9
+			var temp_warning = settingsPanel.GetSettings()['temp_warning']
+			if temp < temp_warning[0] or temp > temp_warning[1]:
+				SendTempNotification(temp, temp_warning)
 			var ph = message['ph']
 			$HBoxContainer/HomePanel/VBoxContainer/Temperature/Value.text = "%2.1f˚" % temp
 			$HBoxContainer/HomePanel/VBoxContainer/Ph/Value.text = "%2.1f" % ph
@@ -224,8 +230,22 @@ func TryConnect():
 	enetConnection.connect_to_host(tentativePeerAddr,  tentativePort)
 	enetConnection.connect_to_host(tentativeLocalPeerAddr, tentativeLocalPort)
 
+func SendTempNotification(t, temp_warning):
+	_demo_flag = false
+	if t < temp_warning[0]:
+		OS.execute("notify-send", ["Omnifeeder","Warning:\nTemperature low!\n" + str(t) + "˚"])
+	if t > temp_warning[1]:
+		OS.execute("notify-send", ["Omnifeeder","Warning:\nTemperature high!\n" + str(t) + "˚"])
+		
+	pass
+
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(_delta):
+	
+	if _demo_flag:
+		var temp_warning = settingsPanel.GetSettings()['temp_warning']
+		if _demo_temp < temp_warning[0] or _demo_temp > temp_warning[1]:
+			SendTempNotification(_demo_temp, temp_warning)
 	
 	# I don't love this, but... it does work.
 	# Fixes the issue of:
@@ -371,3 +391,13 @@ func ChangeTheme(light):
 		theme = lighttheme
 	else:
 		theme = null
+
+
+func _on_demo_high_pressed():
+	_demo_temp = 100
+	_demo_flag = true
+
+
+func _on_demo_low_pressed():
+	_demo_temp = -10
+	_demo_flag = true

@@ -56,6 +56,18 @@ focus_mode = 0
 disabled = true
 text = "Disconnect"
 
+[node name="DemoLow" type="Button" parent="HBoxContainer/SidePanel/VBoxContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+focus_mode = 0
+text = "Demo Low"
+
+[node name="DemoHigh" type="Button" parent="HBoxContainer/SidePanel/VBoxContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+focus_mode = 0
+text = "Demo High"
+
 [node name="Empty" type="Control" parent="HBoxContainer/SidePanel/VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 3
@@ -147,6 +159,8 @@ layout_mode = 2
 [connection signal="pressed" from="HBoxContainer/SidePanel/VBoxContainer/Settings" to="." method="_on_settings_pressed"]
 [connection signal="pressed" from="HBoxContainer/SidePanel/VBoxContainer/Connect" to="." method="_on_connect_pressed"]
 [connection signal="pressed" from="HBoxContainer/SidePanel/VBoxContainer/Disconnect" to="." method="_on_disconnect_pressed"]
+[connection signal="pressed" from="HBoxContainer/SidePanel/VBoxContainer/DemoLow" to="." method="_on_demo_low_pressed"]
+[connection signal="pressed" from="HBoxContainer/SidePanel/VBoxContainer/DemoHigh" to="." method="_on_demo_high_pressed"]
 [connection signal="pressed" from="HBoxContainer/HomePanel/VBoxContainer/FeedButton" to="." method="_on_feed_button_pressed"]
 [connection signal="apply_remote" from="HBoxContainer/SettingsPanel" to="." method="_on_settings_remote_apply_pressed"]
 [connection signal="language_updated" from="HBoxContainer/SettingsPanel" to="." method="ChangeLocale"]
