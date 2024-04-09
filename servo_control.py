@@ -1,6 +1,8 @@
 from time import sleep
 from threading import Thread
-import RPi.GPIO as GPIO
+#import RPi.GPIO as GPIO
+#from gpiozero import AngularServo
+from gpiozero import Servo
 import message_queue
 from enums import *
 
@@ -17,6 +19,27 @@ from enums import *
 #
 #####################################################################
 
+SERVO_PIN = 18
+
+def MoveServo(angle):
+    # Might need to adjust
+    min_pulse_width = 1/1000 #1.0/1000 # ms -> seconds
+    max_pulse_width = 2/1000 # 2.0/1000 # ms -> seconds
+    
+    servo = AngularServo(SERVO_PIN, min_angle=0, max_angle=180, min_pulse_width=min_pulse_width, max_pulse_width=max_pulse_width)
+    servo.angle = angle
+    sleep(0.25)
+    servo.close()
+    
+
+if __name__ == "__main__":
+    angle = 0
+    while True:
+        print("a")
+        MoveServo(angle)
+        sleep(1)
+        angle+=1
+        
 
 def _OpenFeedDoor() -> None:
     """Private: Physically open door"""

@@ -18,6 +18,7 @@ import imutils
 import json
 import random
 import servo_control
+import sensor_control
 from dataclasses import dataclass, field, asdict
 from typing import List
 import socket_convenience as sc
@@ -216,6 +217,12 @@ def HandleControl(message:bytes) -> None:
         response["channel"] = CHANNELS.CONTROL
         message_queue.Add(response)
 
+def ReadPh() -> float:
+    pass
+
+def ReadTemperature() -> float:
+    return sensor_control.read_temp()
+
 
 # TODO(#8): Implement stats (temp, ph) reading from hardware
 useRandomStats = True
@@ -226,8 +233,8 @@ def HandleStats(message:bytes) -> None:
         temp = random.randint(75, 80)
         ph =  7 + 2 * random.random() - 1
     else: # todo
-        temp = random.randint(75, 80)
-        ph =  7 + 2 * random.random() - 1
+        temp = ReadTemperature()
+        ph =  ReadPh
 
     m = {'message_type':MESSAGE.GET_STATS, 'error': ERROR.OK, 'temp': temp, 'ph': ph, 'last_feed': settings.last_feed, "channel": CHANNELS.STATS}
     message_queue.Add(m)
