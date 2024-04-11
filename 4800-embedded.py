@@ -218,14 +218,14 @@ def HandleControl(message:bytes) -> None:
         message_queue.Add(response)
 
 def ReadPh() -> float:
-    pass
+    return sensor_control.read_ph()
 
 def ReadTemperature() -> float:
     return sensor_control.read_temp()
 
 
 # TODO(#8): Implement stats (temp, ph) reading from hardware
-useRandomStats = True
+useRandomStats = False
 def HandleStats(message:bytes) -> None:
     """Return current temp, ph"""
     
@@ -234,14 +234,14 @@ def HandleStats(message:bytes) -> None:
         ph =  7 + 2 * random.random() - 1
     else: # todo
         temp = ReadTemperature()
-        ph =  ReadPh
+        ph =  ReadPh()
 
     m = {'message_type':MESSAGE.GET_STATS, 'error': ERROR.OK, 'temp': temp, 'ph': ph, 'last_feed': settings.last_feed, "channel": CHANNELS.STATS}
     message_queue.Add(m)
 
 
 demo_vid = None
-def HandleVideo(message:bytes, use_demo:bool=False) -> bytes:
+def HandleVideo(message:bytes, use_demo:bool=True) -> bytes:
     """Capture a video frame from the webcam and prepare it to be send to the app"""
     global demo_vid
 
@@ -280,7 +280,7 @@ def HandleVideo(message:bytes, use_demo:bool=False) -> bytes:
     #frame = imutils.resize(frame,width=WEBCAM_WIDTH)
 
     # Encode as jpeg
-    encoded, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
+    encoded, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 20])
     return bytes(buffer)
 
 
@@ -324,6 +324,10 @@ def HandleHolepunch(b:bytes) -> None:
     match message:
         case ["EXPECT", addr, local, port, localport]:
             enetHost.connect(enet.Address(addr, int(port)), channelCount=CHANNELS.MAX)
+            print("local", local)
+            #if len(local.split(".")) > 4:
+            #    pass
+            #else:
             enetHost.connect(enet.Address(local, int(localport)), channelCount=CHANNELS.MAX)
             print("expecting", addr, local, int(port), int(localport))
         case _:

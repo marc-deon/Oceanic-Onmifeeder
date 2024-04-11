@@ -1,7 +1,7 @@
 from time import sleep
 from threading import Thread
 #import RPi.GPIO as GPIO
-#from gpiozero import AngularServo
+from gpiozero import AngularServo
 from gpiozero import Servo
 import message_queue
 from enums import *
@@ -38,14 +38,15 @@ if __name__ == "__main__":
         print("a")
         MoveServo(angle)
         sleep(1)
-        angle+=1
+        angle+=50 % 180
         
 
 def _OpenFeedDoor() -> None:
     """Private: Physically open door"""
     # TODO: Open door here
     print("OPENING FEED DOOR")
-
+    OPEN_ANGLE = 180
+    MoveServo(OPEN_ANGLE)
     # Prepare response message
     ok = True
     if ok:
@@ -68,6 +69,7 @@ def _CloseFeedDoor(feed_time:int) -> None:
 
     # TODO: Open door here
     print("CLOSING FEED DOOR")
+    MoveServo(0)
 
     # Prepare response message
     ok = True
@@ -82,7 +84,7 @@ def _CloseFeedDoor(feed_time:int) -> None:
 
 def Feed(feed_time:int) -> None:
     """Public: Open and close the feeding door in new thread"""
-    
+    print("feed")
     # Open door
     ok = _OpenFeedDoor()
     
