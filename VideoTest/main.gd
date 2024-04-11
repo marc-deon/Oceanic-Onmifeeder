@@ -244,6 +244,7 @@ func _process(_delta):
 	
 	if _demo_flag:
 		var temp_warning = settingsPanel.GetSettings()['temp_warning']
+		print("flag set", _demo_temp, " ", temp_warning[0], " ", temp_warning[1])
 		if _demo_temp < temp_warning[0] or _demo_temp > temp_warning[1]:
 			SendTempNotification(_demo_temp, temp_warning)
 	
