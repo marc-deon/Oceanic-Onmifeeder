@@ -34,7 +34,8 @@ enum MESSAGE {
 	NONE,
 	GET_SETTINGS, 
 	GET_STATS, 
-	MANUAL_FEED, 
+	MANUAL_FEED_OPEN, 
+	MANUAL_FEED_CLOSE, 
 	SET_FEED_TIME, 
 	SET_FEED_LENGTH, 
 	SET_TEMP_WARNING, 
@@ -66,11 +67,22 @@ func ConnectToHolepunch(user, password) -> void:
 	print("connect to hp")
 	# Connect to holepunch server
 	hpPeer = enetConnection.connect_to_host(hp_addr, hp_port)
-	
+	print(IP.get_local_addresses())
+	var ip_to_use := ""
+	for ip in IP.get_local_addresses():
+		if len(ip.split(".")) == 4:
+			if not ip.begins_with("10.168"):
+				ip_to_use = ip
+				print("found ", ip)
+				break
+			else:
+				print("skipping ", ip)
+			
 	# This is the request to connect that we will send later
 	var s = " ".join([
 		"CONN",							# command
-		IP.get_local_addresses()[0],	# Local IP
+		ip_to_use,	# Local IP
+		#IP.get_local_addresses()[5],	# Local IP
 		user,							# Username
 		password,						# Password
 		enetConnection.get_local_port()	# Local port
@@ -160,7 +172,7 @@ func ProcessControl(type_peer_data_channel:Array):
 				modal.set_text(str(e))
 			modal.popup_exclusive_centered(get_tree().root)
 
-		MESSAGE.MANUAL_FEED:
+		MESSAGE.MANUAL_FEED_CLOSE:
 			var e:ERROR = message['error']
 #			var modal := AcceptDialog.new()
 			if e == ERROR.OK:
@@ -178,8 +190,9 @@ func ProcessStats(type_peer_data_channel:Array):
 	match message['message_type'] as MESSAGE:
 		MESSAGE.GET_STATS:
 			var temp = message['temp']
-			if $HBoxContainer/SettingsPanel.useCelsius:
-				temp = (temp - 32) * 5/9
+			if not $HBoxContainer/SettingsPanel.useCelsius:
+				#temp = (temp - 32) * 5/9
+				temp = temp * 9/5 + 32
 			var temp_warning = settingsPanel.GetSettings()['temp_warning']
 			if temp < temp_warning[0] or temp > temp_warning[1]:
 				SendTempNotification(temp, temp_warning)
@@ -224,18 +237,21 @@ func ProcessVideo(type_peer_data_channel:Array):
 func RequestVideo():
 	if embeddedPeer.get_state() == embeddedPeer.STATE_CONNECTED:
 		embeddedPeer.send(CHANNEL.VIDEO, PackedByteArray([1]), ENetPacketPeer.FLAG_UNRELIABLE_FRAGMENT | ENetPacketPeer.FLAG_UNSEQUENCED)
+		#print("video request sent")
 
 
 func TryConnect():
-	enetConnection.connect_to_host(tentativePeerAddr,  tentativePort)
+	#enetConnection.connect_to_host(tentativePeerAddr,  tentativePort)
 	enetConnection.connect_to_host(tentativeLocalPeerAddr, tentativeLocalPort)
 
 func SendTempNotification(t, temp_warning):
 	_demo_flag = false
 	if t < temp_warning[0]:
 		OS.execute("notify-send", ["Omnifeeder","Warning:\nTemperature low!\n" + str(t) + "˚"])
+		pass
 	if t > temp_warning[1]:
 		OS.execute("notify-send", ["Omnifeeder","Warning:\nTemperature high!\n" + str(t) + "˚"])
+		pass
 		
 	pass
 
@@ -262,6 +278,8 @@ func _process(_delta):
 	if $HBoxContainer/HomePanel/VBoxContainer/Camera.is_visible_in_tree():
 		if embeddedPeer:
 			RequestVideo()
+			#RequestVideo()
+			pass
 	
 	match [event_type, channel]:
 		[_, CHANNEL.HOLEPUNCH]:
@@ -275,6 +293,7 @@ func _process(_delta):
 
 		[ENetConnection.EVENT_RECEIVE, CHANNEL.STATS]:
 			ProcessStats(type_peer_data_channel)
+			print("got stats")
 
 		[ENetConnection.EVENT_RECEIVE, CHANNEL.VIDEO]:
 			ProcessVideo(type_peer_data_channel)
@@ -293,6 +312,9 @@ func _process(_delta):
 		
 		[var ev, var chan]:
 			print("unknown event-channel ", ev, " ", chan)
+			var u_b = type_peer_data_channel[1].get_packet()
+			var u_s = u_b.get_string_from_utf8()
+			print(u_s)
 
 
 # Toggle visibility of side pannel buttons
@@ -367,7 +389,7 @@ func _on_settings_remote_apply_pressed():
 func _on_feed_button_pressed():
 	if embeddedPeer and embeddedPeer.get_state() == embeddedPeer.STATE_CONNECTED:
 		$HBoxContainer/HomePanel/VBoxContainer/FadeLabel.fade_in("Feeding...")
-		var packet = JSON.stringify({"message_type": MESSAGE.MANUAL_FEED}).to_utf8_buffer()
+		var packet = JSON.stringify({"message_type": MESSAGE.MANUAL_FEED_OPEN}).to_utf8_buffer()
 		embeddedPeer.send(CHANNEL.CONTROL, packet, ENetPacketPeer.FLAG_RELIABLE)
 	else:
 		$HBoxContainer/HomePanel/VBoxContainer/FadeLabel.fade_in("Not connected!", Color.RED)
