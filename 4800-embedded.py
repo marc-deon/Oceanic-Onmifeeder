@@ -241,11 +241,18 @@ def HandleStats(message:bytes) -> None:
     m = {'message_type':MESSAGE.GET_STATS, 'error': ERROR.OK, 'temp': temp, 'ph': ph, 'last_feed': settings.last_feed, "channel": CHANNELS.STATS}
     message_queue.Add(m)
 
-
 demo_vid = None
-def HandleVideo(message:bytes, use_demo:bool=True) -> bytes:
+use_demo:bool=False
+if not use_demo:
+    demo_vid = cv2.VideoCapture('udp://127.0.0.1:6969', cv2.CAP_FFMPEG)
+
+skip_count = 0
+video_handled = False
+def HandleVideo(message:bytes) -> bytes:
     """Capture a video frame from the webcam and prepare it to be send to the app"""
+    global skip_count
     global demo_vid
+    print("got video request")
 
     if use_demo:
         if not demo_vid:
@@ -257,9 +264,12 @@ def HandleVideo(message:bytes, use_demo:bool=True) -> bytes:
             #demo_vid = cv2.VideoCapture('/dev/video0', cv2.CAP_FFMPEG)
             # TODO: We really, really want to read directly from the file.
             demo_vid = cv2.VideoCapture('udp://127.0.0.1:6969', cv2.CAP_FFMPEG)
+            pass
         vid = demo_vid
 
     if not vid.isOpened():
+        print("not open")
+        demo_vid = cv2.VideoCapture('udp://127.0.0.1:6969', cv2.CAP_FFMPEG)
         return None
 
     # Read next frame
@@ -269,14 +279,22 @@ def HandleVideo(message:bytes, use_demo:bool=True) -> bytes:
         if use_demo:
             # Loop
             demo_vid = cv2.VideoCapture("take_it_yeesy.mp4")
-            return HandleVideo(message, use_demo)
+            return HandleVideo(message)
+        print("Skipping frame")
+        skip_count += 1
+        if skip_count > 5:
+            skip_count = 0
+            demo_vid = cv2.VideoCapture('udp://127.0.0.1:6969', cv2.CAP_FFMPEG)
         return None
 
     # Resize
     #frame = imutils.resize(frame,width=WEBCAM_WIDTH)
 
     # Encode as jpeg
-    encoded, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 20])
+    encoded, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 50])
+    print("encoded")
+    global video_handled
+    video_handled = True
     return bytes(buffer)
 
 
@@ -319,8 +337,8 @@ def HandleHolepunch(b:bytes) -> None:
     print("handling holepunch", message)
     match message:
         case ["EXPECT", addr, local, port, localport]:
-            enetHost.connect(enet.Address(addr, int(port)), channelCount=CHANNELS.MAX)
-            print("local", local)
+            #enetHost.connect(enet.Address(addr, int(port)), channelCount=CHANNELS.MAX)
+            #print("local", local)
             #if len(local.split(".")) > 4:
             #    pass
             #else:
@@ -338,8 +356,11 @@ mobile_peer = None
 def Service() -> None:
     """Main loop"""
     global mobile_peer
+    global video_handled
+    video_handled = False
     schedule.run_pending()
     event = enetHost.service(1000)
+    print("service")
     if False:
         if event.type == enet.EVENT_TYPE_RECEIVE:
             channel = CHANNELS(event.channelID)
@@ -355,7 +376,7 @@ def Service() -> None:
         mobile_peer = event.peer
     elif event.type == enet.EVENT_TYPE_DISCONNECT:
         print("disconnect from", event.peer.address)
-        if event.peer == mobile_peer:
+        if (mobile_peer) and (event.peer.address == mobile_peer.address):
             mobile_peer = None
 
     match event.type:
@@ -381,14 +402,16 @@ def Service() -> None:
                 
                 case CHANNELS.VIDEO:
                     # print("Got channel", channel.name, "data", event.packet.data)
-                    response = HandleVideo(event.packet.data)
-                    #print("got video req", response)
-                    flags = enet.PACKET_FLAG_UNRELIABLE_FRAGMENT | enet.PACKET_FLAG_UNSEQUENCED
+                    if not video_handled:
+                        response = HandleVideo(event.packet.data)
+                        #print("got video req", response)
+                        flags = enet.PACKET_FLAG_UNRELIABLE_FRAGMENT | enet.PACKET_FLAG_UNSEQUENCED
                 case _:
                     print("unknown channel", event.packet.data)
 
     if response:
         event.peer.send(channel, enet.Packet(response, flags))
+        enetHost.flush()
 
 def flush_queue():
     flags = enet.PACKET_FLAG_RELIABLE # Flags to send with the response
