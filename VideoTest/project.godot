@@ -13,13 +13,14 @@ config_version=5
 config/name="VideoTest"
 run/main_scene="res://main.tscn"
 config/features=PackedStringArray("4.2", "Mobile")
-run/max_fps=24
+run/max_fps=25
 config/icon="res://icon.svg"
 
 [display]
 
 window/size/viewport_width=562
 window/size/viewport_height=1000
+window/stretch/scale=2.0
 window/handheld/orientation=1
 
 [internationalization]
@@ -31,3 +32,4 @@ locale/fallback="en_US"
 [rendering]
 
 renderer/rendering_method="mobile"
+textures/vram_compression/import_etc2_astc=true

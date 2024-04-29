@@ -10,3 +10,7 @@ def Get() -> dict:
 
 def Empty() -> bool:
     return message_queue.empty()
+
+def clear():
+    global message_queue
+    message_queue = queue.Queue()

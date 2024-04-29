@@ -80,6 +80,7 @@ def SaveSettings(message) -> bool:
     print("Saving settings...")
     # Update according to message
     settings.feed_time = message["feed_time"]
+    print("feed time is now", message['feed_time'])
     settings.feed_length = message["feed_length"]
     settings.temp_warning = message["temp_warning"]
     settings.ph_warning = message["ph_warning"]
@@ -158,13 +159,13 @@ def HandleControl(message:bytes) -> None:
             time = map(int, message["time"].split(":"))
             
             if len(time) != 2:
-                response = {'error': ERROR.MALFORMED_TIME}
+                response = {'error': ERROR.MALFORMED_TIME,"message_type": MESSAGE.SET_FEED_TIME,}
 
             if time[0] < 0 or time[0] > 23 or time[1] < 0 or time[1] > 59:
-                response = {'error': ERROR.INVALID_TIME}
+                response = {'error': ERROR.INVALID_TIME,"message_type": MESSAGE.SET_FEED_TIME,}
             else:
                 settings.feed_time = time
-                response = {'error':ERROR.OK}
+                response = {'error':ERROR.OK,"message_type": MESSAGE.SET_FEED_TIME,}
                 UpdateSchedule()
 
 
@@ -172,7 +173,7 @@ def HandleControl(message:bytes) -> None:
         case MESSAGE.SET_FEED_LENGTH:
             seconds = float(message["seconds"])
             if seconds <= 0:
-                response = {'error': ERROR.INVALID_LENGTH}
+                response = {'error': ERROR.INVALID_LENGTH,"message_type": MESSAGE.SET_FEED_LENGTH,}
             else:
                 settings.feed_length = seconds
 
@@ -182,10 +183,10 @@ def HandleControl(message:bytes) -> None:
             low, high = message["low"], message["high"]
             if high <= low:
                 # Exact error string shown to user will be handled on clientside
-                response = {'error': ERROR.TEMP_MINMAX}
+                response = {'error': ERROR.TEMP_MINMAX,"message_type":MESSAGE.SET_TEMP_WARNING}
             else:
                 settings.temp_warning = low, high
-                response = {'error':ERROR.OK}
+                response = {'error':ERROR.OK,"message_type":MESSAGE.SET_TEMP_WARNING}
 
 
         # Set minimum and maximum pH warnings
@@ -193,21 +194,22 @@ def HandleControl(message:bytes) -> None:
             low, high = message["low"], message["high"]
             if high <= low:
                 # Exact error string shown to user will be handled on clientside
-                response = {'error': ERROR.PH_MINMAX}
+                response = {'error': ERROR.PH_MINMAX, "message_type":MESSAGE.SET_PH_WARNING}
             else:
                 # Do the thing
                 settings.ph_warning = low, high
-                response = {'error':ERROR.OK}
+                response = {'error':ERROR.OK,"message_type":MESSAGE.SET_PH_WARNING}
 
 
         # Reset settings
         case MESSAGE.RESET_SETTINGS:
             settings = Settings()
-            response = {'error':ERROR.OK}
+            response = {'error':ERROR.OK,"message_type":MESSAGE.RESET_SETTINGS}
         
 
         # Save settings
         case MESSAGE.SAVE_SETTINGS:
+            print("message type was save settings")
             if SaveSettings(message):
                 response = {'error':ERROR.OK, 'message_type':MESSAGE.SAVE_SETTINGS}
             else:
@@ -218,14 +220,14 @@ def HandleControl(message:bytes) -> None:
         message_queue.Add(response)
 
 def ReadPh() -> float:
-    pass
+    return sensor_control.read_ph()
 
 def ReadTemperature() -> float:
     return sensor_control.read_temp()
 
 
 # TODO(#8): Implement stats (temp, ph) reading from hardware
-useRandomStats = True
+useRandomStats = False
 def HandleStats(message:bytes) -> None:
     """Return current temp, ph"""
     
@@ -234,16 +236,23 @@ def HandleStats(message:bytes) -> None:
         ph =  7 + 2 * random.random() - 1
     else: # todo
         temp = ReadTemperature()
-        ph =  ReadPh
+        ph =  ReadPh()
 
     m = {'message_type':MESSAGE.GET_STATS, 'error': ERROR.OK, 'temp': temp, 'ph': ph, 'last_feed': settings.last_feed, "channel": CHANNELS.STATS}
     message_queue.Add(m)
 
-
 demo_vid = None
-def HandleVideo(message:bytes, use_demo:bool=False) -> bytes:
+use_demo:bool=False
+if not use_demo:
+    demo_vid = cv2.VideoCapture('udp://127.0.0.1:6969', cv2.CAP_FFMPEG)
+
+skip_count = 0
+video_handled = False
+def HandleVideo(message:bytes) -> bytes:
     """Capture a video frame from the webcam and prepare it to be send to the app"""
+    global skip_count
     global demo_vid
+    print("got video request")
 
     if use_demo:
         if not demo_vid:
@@ -255,32 +264,37 @@ def HandleVideo(message:bytes, use_demo:bool=False) -> bytes:
             #demo_vid = cv2.VideoCapture('/dev/video0', cv2.CAP_FFMPEG)
             # TODO: We really, really want to read directly from the file.
             demo_vid = cv2.VideoCapture('udp://127.0.0.1:6969', cv2.CAP_FFMPEG)
-            #demo_vid.set(3, 640)
-            #demo_vid.set(4, 480)
-            #demo_vid.set(10, 100)
-            #demo_vid.set(cv2.CAP_PROP_FPS, 30)
-            #demo_vid.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+            pass
         vid = demo_vid
 
     if not vid.isOpened():
+        print("not open")
+        demo_vid = cv2.VideoCapture('udp://127.0.0.1:6969', cv2.CAP_FFMPEG)
         return None
 
     # Read next frame
     nextFrameValid, frame = vid.read()
 
     if not nextFrameValid:
-        print("next frame not valid")
         if use_demo:
             # Loop
             demo_vid = cv2.VideoCapture("take_it_yeesy.mp4")
-            return HandleVideo(message, use_demo)
+            return HandleVideo(message)
+        print("Skipping frame")
+        skip_count += 1
+        if skip_count > 5:
+            skip_count = 0
+            demo_vid = cv2.VideoCapture('udp://127.0.0.1:6969', cv2.CAP_FFMPEG)
         return None
 
     # Resize
     #frame = imutils.resize(frame,width=WEBCAM_WIDTH)
 
     # Encode as jpeg
-    encoded, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
+    encoded, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 50])
+    print("encoded")
+    global video_handled
+    video_handled = True
     return bytes(buffer)
 
 
@@ -323,7 +337,11 @@ def HandleHolepunch(b:bytes) -> None:
     print("handling holepunch", message)
     match message:
         case ["EXPECT", addr, local, port, localport]:
-            enetHost.connect(enet.Address(addr, int(port)), channelCount=CHANNELS.MAX)
+            #enetHost.connect(enet.Address(addr, int(port)), channelCount=CHANNELS.MAX)
+            #print("local", local)
+            #if len(local.split(".")) > 4:
+            #    pass
+            #else:
             enetHost.connect(enet.Address(local, int(localport)), channelCount=CHANNELS.MAX)
             print("expecting", addr, local, int(port), int(localport))
         case _:
@@ -338,8 +356,16 @@ mobile_peer = None
 def Service() -> None:
     """Main loop"""
     global mobile_peer
+    global video_handled
+    video_handled = False
     schedule.run_pending()
-    event = enetHost.service(500)
+    event = enetHost.service(1000)
+    print("service")
+    if False:
+        if event.type == enet.EVENT_TYPE_RECEIVE:
+            channel = CHANNELS(event.channelID)
+            if event.channelID != CHANNELS.HOLEPUNCH:
+                return
     response:bytes = None             # What we will respond with, if anything.
                                       # For the most part None; this is handled
                                       # by message_queue, except for video.
@@ -350,7 +376,7 @@ def Service() -> None:
         mobile_peer = event.peer
     elif event.type == enet.EVENT_TYPE_DISCONNECT:
         print("disconnect from", event.peer.address)
-        if event.peer == mobile_peer:
+        if (mobile_peer) and (event.peer.address == mobile_peer.address):
             mobile_peer = None
 
     match event.type:
@@ -376,13 +402,16 @@ def Service() -> None:
                 
                 case CHANNELS.VIDEO:
                     # print("Got channel", channel.name, "data", event.packet.data)
-                    response = HandleVideo(event.packet.data)
-                    flags = enet.PACKET_FLAG_UNRELIABLE_FRAGMENT | enet.PACKET_FLAG_UNSEQUENCED
+                    if not video_handled:
+                        response = HandleVideo(event.packet.data)
+                        #print("got video req", response)
+                        flags = enet.PACKET_FLAG_UNRELIABLE_FRAGMENT | enet.PACKET_FLAG_UNSEQUENCED
                 case _:
                     print("unknown channel", event.packet.data)
 
     if response:
         event.peer.send(channel, enet.Packet(response, flags))
+        enetHost.flush()
 
 def flush_queue():
     flags = enet.PACKET_FLAG_RELIABLE # Flags to send with the response
@@ -390,15 +419,17 @@ def flush_queue():
         while not message_queue.Empty():
             message = message_queue.Get()
             channel = message.pop('channel')
-            print("Flushed message", message)
             s = json.dumps(message).encode()
             mobile_peer.send(channel, enet.Packet(s, flags))
+    else:
+        message_queue.clear()
 
 def main() -> None:
     LoadSettings()
     UpdateSchedule() # Set initial schedule
     RegisterForHolepunch()
     while True:
+        sensor_control.service()
         Service()
         flush_queue()
 
