@@ -247,3 +247,6 @@ msgstr "Dark"
 
 msgid "THEME_LIGHT"
 msgstr "Light"
+
+msgid "Registration"
+msgstr "Registration"

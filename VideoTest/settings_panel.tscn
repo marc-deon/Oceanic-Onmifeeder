@@ -1,6 +1,7 @@
-[gd_scene load_steps=4 format=3 uid="uid://dpyivff23vrii"]
+[gd_scene load_steps=5 format=3 uid="uid://dpyivff23vrii"]
 
 [ext_resource type="Script" path="res://SettingsPanel.gd" id="1_28uus"]
+[ext_resource type="Script" path="res://Registration.gd" id="2_k84mp"]
 
 [sub_resource type="ImageTexture" id="ImageTexture_o0wrb"]
 
@@ -32,7 +33,7 @@ alignment = 1
 [node name="Label" type="Label" parent="Tabs/Remote Settings/List/Username"]
 layout_mode = 2
 size_flags_horizontal = 11
-text = "Username (NYI)"
+text = "Username"
 
 [node name="LineEdit" type="LineEdit" parent="Tabs/Remote Settings/List/Username"]
 layout_mode = 2
@@ -47,7 +48,7 @@ alignment = 1
 [node name="Label" type="Label" parent="Tabs/Remote Settings/List/Password"]
 layout_mode = 2
 size_flags_horizontal = 11
-text = "Password (NYI)"
+text = "Password"
 
 [node name="LineEdit" type="LineEdit" parent="Tabs/Remote Settings/List/Password"]
 layout_mode = 2
@@ -271,6 +272,60 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "Save"
 
+[node name="Registration" type="MarginContainer" parent="Tabs"]
+visible = false
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+script = ExtResource("2_k84mp")
+
+[node name="List" type="VBoxContainer" parent="Tabs/Registration"]
+layout_mode = 2
+
+[node name="Username" type="HBoxContainer" parent="Tabs/Registration/List"]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="Tabs/Registration/List/Username"]
+layout_mode = 2
+size_flags_horizontal = 7
+text = "Username"
+
+[node name="Value" type="LineEdit" parent="Tabs/Registration/List/Username"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Password" type="HBoxContainer" parent="Tabs/Registration/List"]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="Tabs/Registration/List/Password"]
+layout_mode = 2
+size_flags_horizontal = 7
+text = "Password"
+
+[node name="Value" type="LineEdit" parent="Tabs/Registration/List/Password"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Spacer3" type="Control" parent="Tabs/Registration/List"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+
+[node name="Buttons2" type="HBoxContainer" parent="Tabs/Registration/List"]
+layout_mode = 2
+alignment = 1
+
+[node name="TestRegister" type="Button" parent="Tabs/Registration/List/Buttons2"]
+layout_mode = 2
+text = "Test Register"
+
+[node name="TestLogin" type="Button" parent="Tabs/Registration/List/Buttons2"]
+layout_mode = 2
+text = "Test Login"
+
 [connection signal="value_changed" from="Tabs/Remote Settings/List/FeedLength/Length" to="." method="_on_feed_length_value_changed"]
 [connection signal="pressed" from="Tabs/Remote Settings/List/Buttons/Reset" to="." method="_on_reset_remote_pressed"]
 [connection signal="pressed" from="Tabs/Remote Settings/List/Buttons/Apply" to="." method="_on_apply_remote_pressed"]
@@ -279,3 +334,5 @@ text = "Save"
 [connection signal="item_selected" from="Tabs/Local Settings/List/TempFormat/ItemList" to="." method="on_temp_format_updated"]
 [connection signal="item_selected" from="Tabs/Local Settings/List/Theme/ItemList" to="." method="on_theme_updated"]
 [connection signal="pressed" from="Tabs/Local Settings/List/Buttons2/Save" to="." method="_on_save_local_pressed"]
+[connection signal="pressed" from="Tabs/Registration/List/Buttons2/TestRegister" to="Tabs/Registration" method="_on_test_register_pressed"]
+[connection signal="pressed" from="Tabs/Registration/List/Buttons2/TestLogin" to="Tabs/Registration" method="_on_test_login_pressed"]
