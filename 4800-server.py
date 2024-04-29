@@ -188,9 +188,12 @@ def _server_DatabaseSave() -> None:
 
 # Load database from file
 def _server_DatabaseLoad() -> None:
-    with open("auth_database.json", 'r') as f:
-        global database
-        database = json.loads(f.read())
+    try:
+        with open("auth_database.json", 'r') as f:
+            global database
+            database = json.loads(f.read())
+    except:
+        return {}
 
 
 # Check if a key exists in the database.
