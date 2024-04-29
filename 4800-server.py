@@ -78,12 +78,14 @@ def enet_main():
                             if isinstance(token_or_error, Token):
                                 print("Sending token")
                                 s = dumps({
+                                    'type': 'REGISTER',
                                     'error_type': 'OK',
                                     'message': token_or_error
                                 }).encode()
                             else:
                                 print("Sending error", token_or_error)
                                 s = dumps({
+                                    'type': 'REGISTER',
                                     'error_type': 'ERROR_REGISTRATION',
                                     'message': token_or_error
                                 }).encode()
@@ -96,12 +98,14 @@ def enet_main():
                             if isinstance(token_or_error, Token):
                                 print("Sending token")
                                 s = dumps({
+                                    'type': 'LOGIN',
                                     'error_type': 'OK',
                                     'message': token_or_error
                                 }).encode()
                             else:
                                 print("Sending error", token_or_error)
                                 s = dumps({
+                                    'type': 'LOGIN',
                                     'error_type': 'ERROR_LOGIN',
                                     'message': token_or_error
                                 }).encode()
