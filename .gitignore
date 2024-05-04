@@ -1,6 +1,8 @@
 __pycache__/
 /.vscode/
 /VideoTest/export*
+/VideoTest/LightTheme.tres
+/VideoTest/feesh.png.import
 bin/
 lib/
 lib64

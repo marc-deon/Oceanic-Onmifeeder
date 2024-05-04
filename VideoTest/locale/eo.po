@@ -246,3 +246,6 @@ msgstr "Malbrila"
 
 msgid "THEME_LIGHT"
 msgstr "Brila"
+
+msgid "Registration"
+msgstr "registriĝo"
