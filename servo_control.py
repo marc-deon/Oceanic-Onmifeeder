@@ -45,7 +45,7 @@ def _OpenFeedDoor() -> None:
     """Private: Physically open door"""
     # TODO: Open door here
     print("OPENING FEED DOOR")
-    OPEN_ANGLE = 110
+    OPEN_ANGLE = 170
     MoveServo(OPEN_ANGLE)
     # Prepare response message
     ok = True
