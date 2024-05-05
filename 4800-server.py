@@ -20,6 +20,7 @@ def enet_main():
     print("Entering enet main")
     userdict = {} # username -> ip ip port port
     hostdict = {} # username -> enet.peer
+    pending_pushes = []
 
     enetHost = enet.Host(enet.Address(None, HOST_PORT), peerCount=32)
     while True:
@@ -38,7 +39,6 @@ def enet_main():
                         event.peer.send(CHANNELS.HOLEPUNCH, enet.Packet(b"HOSTING", enet.PACKET_FLAG_RELIABLE))
                         print("Sent HOSTING")
 
-                    # TODO: Use password
                     case ["CONN", local, username, password, localport]:
                             if username not in userdict:
                                 s = "USERNAME_NOT_PRESENT".encode()
@@ -47,7 +47,6 @@ def enet_main():
                                 continue
 
 
-                            # TODO: Authenticate here
                             token = server_TryLogin(username, password)
                             if not isinstance(token, Token):
                                 s = "AUTHENTICATION FAILED".encode()
@@ -68,9 +67,7 @@ def enet_main():
                             event.peer.send(CHANNELS.HOLEPUNCH, enet.Packet(connto, enet.PACKET_FLAG_RELIABLE))
 
                             # Remove info from dictionaries
-                            #userdict.pop(username)
-                            #hostdict.pop(username).disconnect_later()
-                            event.peer.disconnect_later()
+                            #event.peer.disconnect_later()
 
                     case ["REGISTER", username, password]:
                             print("Register function impl. in progress")
@@ -112,10 +109,40 @@ def enet_main():
 
                             event.peer.send(0, enet.Packet(s, enet.PACKET_FLAG_RELIABLE))
 
+                    case ["NOTIF_NEW", username, password, *payload]:
+                        payload = "".join(payload)
+                        print("Got new notif", payload)
+                        token_or_error = server_TryLogin(username, password)
+                        if isinstance(token_or_error, Token):
+                            # Valid username & password: Add to list
+                            print("Added")
+                            pending_pushes.append({'username':username, 'password':password, 'payload':payload})
+                        else:
+                            print("Failed verify for new notif")
+
+                    case ["NOTIF_CHECK", username, password]:
+                        token_or_error = server_TryLogin(username, password)
+                        if isinstance(token_or_error, Token):
+                            # Valid username & password: Check for notifs for us
+                            peer = event.peer
+                            for push in pending_pushes:
+                                if push['username'] == username:
+                                    print("Sending push to client")
+                                    # This one is intended for us
+                                    payload = push['payload'].encode()
+                                    pending_pushes.remove(push)
+                                    peer.send(CHANNELS.STATS, enet.Packet(payload, enet.PACKET_FLAG_RELIABLE))
+                                else:
+                                    print(f"Given username {username} doesn't match queue's {push['username']}")
+                        else:
+                            print("Verification failed for notif check")
+
                     case _:
                         s = "Unknown message format".encode()
                         print(s, "from", event.peer.address.host, ":", event.peer.address.port, event.packet.data.decode().split(" "))
                         event.peer.send(CHANNELS.HOLEPUNCH, enet.Packet(s, enet.PACKET_FLAG_RELIABLE))
+
+
 
 
 ##########################
