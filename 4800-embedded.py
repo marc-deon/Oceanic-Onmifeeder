@@ -26,6 +26,8 @@ from enums import *
 import schedule
 from datetime import datetime
 import message_queue
+from threading import Thread
+import time
 
 SERVER_IP = 'highlyderivative.games'
 SERVER_PORT = 4800
@@ -54,6 +56,7 @@ class Settings:
         return asdict(self)
 
 enetHost:enet.Host = None
+serverPeer = None
 
 settings:Settings
 
@@ -105,7 +108,6 @@ def UpdateSchedule():
     schedule.every().day.at(time).do(FeedServo).tag("settings")
 
 
-# TODO(#7): Implement servo control
 def FeedServo() -> None:
     """Open and close the feed door"""
     # if not empty?
@@ -226,7 +228,6 @@ def ReadTemperature() -> float:
     return sensor_control.read_temp()
 
 
-# TODO(#8): Implement stats (temp, ph) reading from hardware
 useRandomStats = False
 def HandleStats(message:bytes) -> None:
     """Return current temp, ph"""
@@ -242,7 +243,7 @@ def HandleStats(message:bytes) -> None:
     message_queue.Add(m)
 
 demo_vid = None
-use_demo:bool=False
+use_demo:bool=True
 if not use_demo:
     demo_vid = cv2.VideoCapture('udp://127.0.0.1:6969', cv2.CAP_FFMPEG)
 
@@ -298,7 +299,40 @@ def HandleVideo(message:bytes) -> bytes:
     return bytes(buffer)
 
 
-# TODO(#12): RegisterForHolepunch()->None should probably be adapted into HandleHolepunch(bytes)->str, enable reconnection
+outgoingPushQueue = []
+def ServicePush() -> None:
+
+    temp = ReadTemperature()
+    ph =  ReadPh()
+    #temp_warning:List[float] = field(default_factory=lambda: [10, 99]) # low, high
+    #ph_warning:List[float]   = field(default_factory=lambda: [1, 14]) # low, high
+
+    if temp < settings.temp_warning[0]:
+        s = json.dumps({"error":ERROR.OK, "message_type":MESSAGE.PUSH, "message":"TEMP_LOW", "value": temp})
+        QueuePush(s)
+    elif temp > settings.temp_warning[1]:
+        s = json.dumps({"error":ERROR.OK, "message_type":MESSAGE.PUSH, "message":"TEMP_HIGH", "value": temp})
+        QueuePush(s)
+
+    if ph < settings.ph_warning[0]:
+        s = json.dumps({"error":ERROR.OK, "message_type":MESSAGE.PUSH, "message":"PH_LOW", "value": ph})
+        QueuePush(s)
+    elif ph > settings.ph_warning[1]:
+        s = json.dumps({"error":ERROR.OK, "message_type":MESSAGE.PUSH, "message":"PH_HIGH", "value": ph})
+        QueuePush(s)
+
+    # If we're connected to the server
+    if serverPeer:
+        while outgoingPushQueue:
+            message = outgoingPushQueue.pop(0)
+            serverPeer.send(0, enet.Packet(message, enet.PACKET_FLAG_RELIABLE))
+
+
+def QueuePush(message:str) -> None:
+    s = f"NOTIF_NEW {settings._username} {settings._salted_password} {message}"
+    outgoingPushQueue.append(s.encode())
+
+
 def RegisterForHolepunch() -> None:
     print("registering...")
 
@@ -307,7 +341,7 @@ def RegisterForHolepunch() -> None:
     # Bind to all IPv4 addresses, any port?
     enetHost = enet.Host(enet.Address(None, 0), peerCount=32)
     # We might want to save this later for a graceful disconnect or something
-    hpServerPeer = None
+    global serverPeer
     enetHost.connect(enet.Address(SERVER_IP, SERVER_PORT), channelCount=CHANNELS.MAX)
 
     # use enet to register
@@ -319,11 +353,13 @@ def RegisterForHolepunch() -> None:
         if event.type == enet.EVENT_TYPE_NONE:
             pass
         if event.type == enet.EVENT_TYPE_CONNECT:
-            hpServerPeer = event.peer
-            hpServerPeer.send(CHANNELS.HOLEPUNCH, enet.Packet(s, enet.PACKET_FLAG_RELIABLE))
+            serverPeer = event.peer
+            serverPeer.send(CHANNELS.HOLEPUNCH, enet.Packet(s, enet.PACKET_FLAG_RELIABLE))
             print("Connected, sending", s)
+
         if event.type == enet.EVENT_TYPE_RECEIVE:
             if event.packet.data == b'HOSTING':
+                serverPeer = event.peer
                 break
     else:
         raise TimeoutError
@@ -413,6 +449,7 @@ def Service() -> None:
         event.peer.send(channel, enet.Packet(response, flags))
         enetHost.flush()
 
+
 def flush_queue():
     flags = enet.PACKET_FLAG_RELIABLE # Flags to send with the response
     if mobile_peer:
@@ -424,10 +461,18 @@ def flush_queue():
     else:
         message_queue.clear()
 
+
+def ServicePush_Loop():
+    while True:
+        ServicePush()
+        time.sleep(10)
+
+
 def main() -> None:
     LoadSettings()
     UpdateSchedule() # Set initial schedule
     RegisterForHolepunch()
+    Thread(target=ServicePush_Loop).start()
     while True:
         sensor_control.service()
         Service()
