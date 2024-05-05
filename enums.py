@@ -33,3 +33,4 @@ class MESSAGE(enum.IntEnum):
     SET_PH_WARNING = enum.auto()
     RESET_SETTINGS = enum.auto()
     SAVE_SETTINGS = enum.auto()
+    PUSH = enum.auto()
