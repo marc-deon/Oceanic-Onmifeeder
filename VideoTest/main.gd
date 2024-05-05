@@ -41,7 +41,8 @@ enum MESSAGE {
 	SET_TEMP_WARNING, 
 	SET_PH_WARNING, 
 	RESET_SETTINGS, 
-	SAVE_SETTINGS
+	SAVE_SETTINGS,
+	PUSH
 }
 
 const hp_addr := "highlyderivative.games"
@@ -188,14 +189,27 @@ func ProcessStats(type_peer_data_channel:Array):
 		printerr("STATS ERROR: ", message['error'])
 
 	match message['message_type'] as MESSAGE:
+		
+		MESSAGE.PUSH:
+			if message["message"] == "TEMP_HIGH":
+					OS.execute("notify-send", ["Omnifeeder","Warning:\nTemperature high!\n" + str(message["value"]) + "˚"])
+			if message["message"] == "TEMP_LOW":
+					OS.execute("notify-send", ["Omnifeeder","Warning:\nTemperature low!\n" + str(message["value"]) + "˚"])
+			if message["message"] == "PH_HIGH":
+					OS.execute("notify-send", ["Omnifeeder","Warning:\nPH high!\n" + str(message["value"])])
+			if message["message"] == "PH_LOW":
+					OS.execute("notify-send", ["Omnifeeder","Warning:\nPH low!\n" + str(message["value"])])
+				
+			#var temp_warning = settingsPanel.GetSettings()['temp_warning']
+				#if temp < temp_warning[0] or temp > temp_warning[1]:
+					#SendTempNotification(temp, temp_warning)
+		
 		MESSAGE.GET_STATS:
 			var temp = message['temp']
 			if not $HBoxContainer/SettingsPanel.useCelsius:
 				#temp = (temp - 32) * 5/9
 				temp = temp * 9/5 + 32
-			var temp_warning = settingsPanel.GetSettings()['temp_warning']
-			if temp < temp_warning[0] or temp > temp_warning[1]:
-				SendTempNotification(temp, temp_warning)
+			
 			var ph = message['ph']
 			$HBoxContainer/HomePanel/VBoxContainer/Temperature/Value.text = "%2.1f˚" % temp
 			$HBoxContainer/HomePanel/VBoxContainer/Ph/Value.text = "%2.1f" % ph
@@ -245,24 +259,35 @@ func TryConnect():
 	enetConnection.connect_to_host(tentativeLocalPeerAddr, tentativeLocalPort)
 
 func SendTempNotification(t, temp_warning):
-	_demo_flag = false
-	if t < temp_warning[0]:
-		OS.execute("notify-send", ["Omnifeeder","Warning:\nTemperature low!\n" + str(t) + "˚"])
-		pass
-	if t > temp_warning[1]:
-		OS.execute("notify-send", ["Omnifeeder","Warning:\nTemperature high!\n" + str(t) + "˚"])
-		pass
-		
+	#_demo_flag = false
+	#if t < temp_warning[0]:
+		#OS.execute("notify-send", ["Omnifeeder","Warning:\nTemperature low!\n" + str(t) + "˚"])
+		#pass
+	#if t > temp_warning[1]:
+		#OS.execute("notify-send", ["Omnifeeder","Warning:\nTemperature high!\n" + str(t) + "˚"])
+		#pass
+		#
 	pass
-
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(_delta):
 	
+func CheckForPushes():
 	if _demo_flag:
 		var temp_warning = settingsPanel.GetSettings()['temp_warning']
 		print("flag set", _demo_temp, " ", temp_warning[0], " ", temp_warning[1])
 		if _demo_temp < temp_warning[0] or _demo_temp > temp_warning[1]:
 			SendTempNotification(_demo_temp, temp_warning)
+	
+	if hpPeer:
+		print("Exists")
+		var userpass = $HBoxContainer/SettingsPanel.GetUserPass()
+		var s = "NOTIF_CHECK %s %s" % userpass
+		var packet:PackedByteArray = s.to_utf8_buffer()
+		hpPeer.send(0, packet, ENetPacketPeer.FLAG_RELIABLE)
+		print(hpPeer.get_remote_address())
+	else:
+		print("no exist")
+
+# Called every frame. 'delta' is the elapsed time since the previous frame.
+func _process(_delta):
 	
 	# I don't love this, but... it does work.
 	# Fixes the issue of:

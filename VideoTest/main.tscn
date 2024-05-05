@@ -152,6 +152,10 @@ layout_mode = 2
 
 [node name="StatTimer" type="Timer" parent="Timers"]
 
+[node name="Timer" type="Timer" parent="Timers"]
+wait_time = 4.0
+autostart = true
+
 [connection signal="connected" from="." to="." method="_on_connect_success"]
 [connection signal="disconnected" from="." to="." method="on_disconnect"]
 [connection signal="toggled" from="HBoxContainer/SidePanel/VBoxContainer/Hamburger" to="." method="_on_hamburger_toggled"]
@@ -167,3 +171,4 @@ layout_mode = 2
 [connection signal="reset_remote" from="HBoxContainer/SettingsPanel" to="." method="RefreshSettings"]
 [connection signal="theme_updated" from="HBoxContainer/SettingsPanel" to="." method="ChangeTheme"]
 [connection signal="timeout" from="Timers/StatTimer" to="." method="_on_stat_timer_timeout"]
+[connection signal="timeout" from="Timers/Timer" to="." method="CheckForPushes"]
