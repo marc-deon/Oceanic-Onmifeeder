@@ -2,7 +2,7 @@ this is a Computer Engineering senior project developed between Fall of 2023 and
 
 It is a fish-tank accessory that provides automated feeding, temperature and pH sensor information, and a live video feed from a waterproof camera inside the tank.
 
-https://github.com/marc-deon/Oceanic-Onmifeeder/assets/134232943/1e0852b7-0b9f-4311-8fa0-4f3e5048856a
+https://github.com/marc-deon/Oceanic-Onmifeeder/assets/134232943/842bca8c-e8bf-46b2-a7a1-bab3e16c333f
 
 # Project Structure
 There are 3 primary programs here, with their key files being:
